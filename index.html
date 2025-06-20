@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>15-Second Looping Webcam Recorder</title>
+    <title>60-Second Looping Webcam Recorder</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -241,7 +241,7 @@
     </style>
 </head>
 <body>
-    <h1>15-Second Looping Webcam Recorder</h1>
+    <h1>60-Second Looping Webcam Recorder</h1>
 
     <div class="orientation-message">
         Use the app in landscape orientation on mobile devices
@@ -251,7 +251,7 @@
         <div class="video-container" id="livePreview">
             <div class="live-indicator">LIVE</div>
             <video id="liveVideo" autoplay muted playsinline></video>
-            <div class="timer" id="timerDisplay">00:15</div>
+            <div class="timer" id="timerDisplay">00:60</div>
         </div>
         
         <div class="controls-and-instructions">
@@ -265,7 +265,7 @@
     </div>
     
     <div class="replay-section">
-        <div class="section-title">Recent 15-second replay</div>
+        <div class="section-title">Recent 60-second replay</div>
         <div class="replay-video-area"> <!-- Wrapper for replay video -->
             <video id="replayVideo" controls loop playsinline></video>
         </div>
@@ -286,7 +286,7 @@
         let mediaRecorder;
         let recordedChunks = [];
         let timerInterval;
-        const RECORDING_DURATION = 15; // Define recording duration in seconds
+        const RECORDING_DURATION = 60; // Define recording duration in seconds
         let secondsRemaining = RECORDING_DURATION; 
         let mediaStream; // Stores the active media stream from webcam/mic
         let supportedMimeType = 'video/mp4'; // Default MIME type, will be determined at init
