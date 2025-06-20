@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Mobile-Optimized Webcam Recorder with Zoom & Camera Flip</title>
+    <title>15-Second Looping Webcam Recorder</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -74,13 +74,13 @@
             height: auto; /* Maintain aspect ratio */
             display: block;
             background-color: #000;
-            transform: scale(1); /* Initial scale for zoom */
-            transition: transform 0.1s ease-out; /* Smooth zoom transition */
-            transform-origin: center center; /* Zoom from the center */
+            transform: scale(1); /* No zoom, but keep for consistency if needed */
+            transition: none; /* No transition for zoom */
+            transform-origin: center center;
             margin: 0 auto; /* Center the thumbnail */
         }
 
-        /* New style for the replay video wrapper */
+        /* Style for the replay video wrapper */
         .replay-video-area {
             position: relative; /* Crucial for absolute positioning of its children */
             width: 100%; /* Take full width of its parent (.replay-section) initially */
@@ -98,16 +98,15 @@
             height: auto;
             display: block;
             background-color: #000;
-            /* Removed border-radius and box-shadow from video itself, moved to wrapper */
-            transform: scale(1); /* Initial scale for replay zoom, managed by JS */
-            transition: transform 0.1s ease-out; /* Smooth zoom transition */
+            transform: scale(1); /* No zoom, but keep for consistency if needed */
+            transition: none; /* No transition for zoom */
             transform-origin: center center;
             object-fit: contain; /* Ensure video fits within its bounds, especially after rotation */
         }
 
         /* Styles for portrait orientation of the replay video if it needs to be rotated */
         video#replayVideo.portrait-orientation {
-            /* Transform is handled by JS for both scale and rotate */
+            /* Transform is handled by JS for rotation */
         }
         
         .live-indicator {
@@ -139,67 +138,6 @@
             font-size: 14px;
             z-index: 10; /* Ensure timer is above video */
         }
-
-        /* Zoom controls for live video (inside video-container) */
-        /* REMOVED .zoom-controls for live video */
-
-        /* Zoom controls for replay video (inside replay-video-area) */
-        .replay-zoom-controls {
-            position: absolute;
-            bottom: 10px;
-            left: 50%; /* Center the slider */
-            transform: translateX(-50%); /* Adjust for centering */
-            z-index: 10;
-            display: flex;
-            gap: 10px; /* Space between slider and label */
-            background-color: rgba(0, 0, 0, 0.7); /* Background for slider area */
-            padding: 8px 12px;
-            border-radius: 4px;
-            align-items: center;
-        }
-
-        .replay-zoom-controls input[type="range"] {
-            width: 150px; /* Width of the slider */
-            -webkit-appearance: none; /* Remove default styling for Chrome/Safari */
-            appearance: none;
-            height: 8px;
-            background: #d3d3d3;
-            outline: none;
-            opacity: 0.7;
-            -webkit-transition: .2s;
-            transition: opacity .2s;
-            border-radius: 4px;
-        }
-
-        .replay-zoom-controls input[type="range"]:hover {
-            opacity: 1;
-        }
-
-        .replay-zoom-controls input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #3498db;
-            cursor: pointer;
-            box-shadow: 0 0 2px rgba(0,0,0,0.5);
-        }
-
-        .replay-zoom-controls input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #3498db;
-            cursor: pointer;
-            box-shadow: 0 0 2px rgba(0,0,0,0.5);
-        }
-
-        .replay-zoom-controls label {
-            color: white;
-            font-size: 14px;
-            white-space: nowrap; /* Prevent text wrapping */
-        }
         
         .controls-and-instructions {
             display: flex;
@@ -215,11 +153,13 @@
             order: 2; /* Controls and instructions second on mobile */
         }
         @media (min-width: 768px) {
-            .video-container {
-                order: 0; /* Default order on desktop */
+            .container {
+                flex-direction: row; /* Two columns on larger screens */
+                justify-content: center; /* Center the two main blocks */
+                align-items: flex-start; /* Align items to the top */
             }
-            .controls-and-instructions {
-                order: 0; /* Default order on desktop */
+            .video-container {
+                margin: 0; /* Reset margin for grid alignment on desktop */
             }
         }
         
@@ -298,18 +238,16 @@
     </style>
 </head>
 <body>
-    <h1>30-Second Looping Webcam Recorder</h1>
+    <h1>15-Second Looping Webcam Recorder</h1>
 
     <div class="section-title">Instructions</div>
     <ul>
         <li>**Important:** For best experience on mobile, please use the app in **horizontal (landscape)** orientation.</li>
-        <li>Click "Start Recording" to begin a series of 30-second recordings.</li>
+        <li>Click "Start Recording" to begin a series of 15-second recordings.</li>
         <li>The **live video preview** will appear as a small thumbnail.</li>
-        <li>Each 30-second clip will automatically replace the "Last Recorded Video" below, which will be a larger view.</li>
+        <li>Each 15-second clip will automatically replace the "Last Recorded Video" below, which will be a larger view.</li>
         <li>Click "Stop Recording" to end the continuous recording cycle.</li>
         <li>Click the 'Flip Camera' button to switch between front and back cameras (on mobile devices).</li>
-        <li>Use the **zoom slider** below the recorded video to zoom in/out on the **last recorded video**.</li>
-        <li>Playing the "Last Recorded Video" will automatically stop any ongoing recording.</li>
         <li>The screen will automatically stay on while recording is active to prevent interruptions.</li>
     </ul>
     <div class="scroll-down-message">
@@ -320,8 +258,7 @@
         <div class="video-container" id="livePreview">
             <div class="live-indicator">LIVE</div>
             <video id="liveVideo" autoplay muted playsinline></video>
-            <div class="timer" id="timerDisplay">00:30</div>
-            <!-- Removed zoom-controls for live video -->
+            <div class="timer" id="timerDisplay">00:15</div>
         </div>
         
         <div class="controls-and-instructions">
@@ -336,12 +273,9 @@
     
     <div class="replay-section">
         <div class="section-title">Last Recorded Video</div>
-        <div class="replay-video-area"> <!-- NEW WRAPPER -->
+        <div class="replay-video-area"> <!-- Wrapper for replay video -->
             <video id="replayVideo" controls loop playsinline></video>
-            <div class="replay-zoom-controls">
-                <label for="replayZoomSlider">Zoom:</label>
-                <input type="range" id="replayZoomSlider" min="50" max="200" value="100">
-            </div>
+            <!-- Removed zoom controls for replay video -->
         </div>
     </div>
 
@@ -353,20 +287,16 @@
         const timerDisplay = document.getElementById('timerDisplay');
         const livePreview = document.getElementById('livePreview');
         const statusDisplay = document.getElementById('status');
-        // Removed zoomInButton and zoomOutButton for live video
         const cameraFlipButton = document.getElementById('cameraFlipButton');
-        const replayZoomSlider = document.getElementById('replayZoomSlider'); // New slider element
         
         // Global variables
         let mediaRecorder;
         let recordedChunks = [];
         let timerInterval;
-        let secondsRemaining = 30;
+        const RECORDING_DURATION = 15; // Define recording duration in seconds
+        let secondsRemaining = RECORDING_DURATION; 
         let mediaStream; // Stores the active media stream from webcam/mic
         let supportedMimeType = 'video/mp4'; // Default MIME type, will be determined at init
-        let currentReplayZoom = 1.0; // Initial zoom level for replay video
-        const MAX_ZOOM = 2.0; // Maximum zoom level
-        const MIN_ZOOM = 0.5; // Minimum zoom level
         let currentCameraFacing = 'user'; // 'user' for front, 'environment' for back
         let wakeLockSentinel = null; // For screen wake lock
         let lastRecordedOrientation = 'landscape'; // Stores orientation of the last recorded video
@@ -396,7 +326,6 @@
                 
                 if (!MediaRecorder.isTypeSupported(supportedMimeType)) {
                      console.warn('No suitable video recording MIME type found, defaulting to video/webm.');
-                     // Fallback to a very generic type if none of the preferred are supported.
                      supportedMimeType = 'video/webm'; 
                      if (!MediaRecorder.isTypeSupported(supportedMimeType)) {
                         statusDisplay.textContent = "Your browser may not fully support video recording.";
@@ -404,9 +333,6 @@
                      }
                 }
                 console.log('Using MIME type for MediaRecorder:', supportedMimeType);
-
-                // Set initial slider value
-                replayZoomSlider.value = currentReplayZoom * 100;
 
             } catch (error) {
                 // Handle errors if media access is denied or unavailable
@@ -437,36 +363,25 @@
             } catch (error) {
                 console.error(`Error switching to ${facingMode} camera:`, error);
                 statusDisplay.textContent = `Error switching camera. ${error.name}: ${error.message}`;
-                // Revert to previous camera if switching failed or access denied
-                currentCameraFacing = facingMode === 'user' ? 'environment' : 'user';
+                currentCameraFacing = facingMode === 'user' ? 'environment' : 'user'; // Revert
                 recordButton.disabled = true; // Disable recording if camera access fails
             }
         }
         
-        // Function to start a 30-second recording segment
+        // Function to start a 15-second recording segment
         function startRecording() {
-            // Ensure media stream is available
             if (!mediaStream) {
                 statusDisplay.textContent = "Error: Camera/Microphone not available.";
                 return;
             }
             
-            // Clear any previously recorded data for the new segment
             recordedChunks = [];
-            // Reset the timer for the new 30-second segment
-            secondsRemaining = 30;
-            updateTimerDisplay(); // Update the displayed timer immediately
+            secondsRemaining = RECORDING_DURATION; 
+            updateTimerDisplay();
             
-            // Clear any existing timer interval to prevent multiple timers running
             clearInterval(timerInterval);
 
-            // Reset zoom to default when recording starts
-            // Removed resetLiveZoom();
-            resetReplayZoom(); // Also reset replay zoom
-
             // Determine and store the orientation of the live stream at the start of recording
-            // This is crucial for correctly orienting the replay video later.
-            // Check video dimensions after metadata loads
             liveVideo.onloadedmetadata = () => {
                 if (liveVideo.videoHeight > liveVideo.videoWidth) {
                     lastRecordedOrientation = 'portrait';
@@ -474,12 +389,9 @@
                     lastRecordedOrientation = 'landscape';
                 }
                 console.log('Live video orientation detected:', lastRecordedOrientation);
-                // Remove the event listener to prevent multiple calls
                 liveVideo.onloadedmetadata = null; 
             };
-
-            // If metadata already loaded (e.g., camera already active), determine immediately
-            if (liveVideo.readyState >= 1) { // HAVE_METADATA or greater
+            if (liveVideo.readyState >= 1) { // If metadata already loaded
                 if (liveVideo.videoHeight > liveVideo.videoWidth) {
                     lastRecordedOrientation = 'portrait';
                 } else {
@@ -488,155 +400,101 @@
                 console.log('Live video orientation detected (pre-loaded):', lastRecordedOrientation);
             }
 
-            // Request Wake Lock to keep screen on
             requestWakeLock();
             
-            // Create a new MediaRecorder instance with the media stream and determined MIME type
             mediaRecorder = new MediaRecorder(mediaStream, { mimeType: supportedMimeType });
             
-            // Event listener for when data is available from the recorder
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
-                    recordedChunks.push(event.data); // Add the data chunk to our array
+                    recordedChunks.push(event.data);
                 }
             };
             
-            // Event listener for when the recording stops
             mediaRecorder.onstop = () => {
-                // Release Wake Lock
                 releaseWakeLock();
 
-                // Create a Blob from all collected recorded chunks, using the determined MIME type
                 const blob = new Blob(recordedChunks, { type: supportedMimeType });
-                // Create a URL for the Blob to be used as a video source
                 const videoUrl = URL.createObjectURL(blob);
                 
                 console.log('Recorded Blob:', blob);
                 console.log('Video URL created:', videoUrl);
 
-                // Set the source of the replay video element to the new 30-second clip
                 replayVideo.src = videoUrl;
-                replayVideo.style.display = 'block'; // Ensure the replay video player is visible
-                replayVideo.load(); // Reload the video element to ensure playback
-                // No auto-play here, as user explicitly wanted replay to stop recording.
-                // Playback will be manually initiated or triggered by replayVideo.onplay event.
+                replayVideo.style.display = 'block';
+                replayVideo.load();
+                replayVideo.play().catch(e => console.error("Error attempting to auto-play replay video:", e)); // Auto-play the replay video
 
                 // Set the orientation class on the replay video based on the recorded orientation
-                // This will apply the rotation via updateReplayVideoTransform
                 if (lastRecordedOrientation === 'portrait') {
                     replayVideo.classList.add('portrait-orientation');
                 } else {
                     replayVideo.classList.remove('portrait-orientation');
                 }
-                updateReplayVideoTransform(); // Apply transform after setting class
+                // Update transform without zoom, just rotation
+                replayVideo.style.transform = replayVideo.classList.contains('portrait-orientation') ? 'rotate(90deg)' : 'none';
 
-                // Add an error listener for the replay video to catch playback issues
                 replayVideo.onerror = (e) => {
                     console.error('Error playing replay video:', e);
                     statusDisplay.textContent = "Error playing recorded video. It might be a codec issue or corrupted data. See console for details.";
                 };
                 
-                // Check if the recording should continue (i.e., if the user hasn't manually stopped it)
+                // Continue the loop if recording is still desired
                 if (recordButton.classList.contains('recording')) {
-                    // Start a new 30-second segment after a short delay
-                    setTimeout(startRecording, 100); 
+                    setTimeout(startRecording, 100); // Restart recording after a short delay
                 } else {
-                    // If manually stopped, update status and clear button state
                     statusDisplay.textContent = "Recording complete. Last video is displayed below.";
                 }
             };
             
-            // Start the media recorder
-            mediaRecorder.start();
+            // Start recording with a timeslice of 1 second (1000ms) to ensure data chunks are available
+            mediaRecorder.start(1000); 
             
-            // Start the countdown timer for this segment
             timerInterval = setInterval(updateTimer, 1000);
             
-            // Update UI to reflect that recording is active
             livePreview.classList.add('recording');
-            recordButton.textContent = 'Stop Recording'; // Change button text
-            recordButton.classList.add('recording'); // Add class for recording style
+            recordButton.textContent = 'Stop Recording';
+            recordButton.classList.add('recording');
             statusDisplay.textContent = "Recording...";
         }
         
         // Function to stop the entire continuous recording process
         function stopRecording() {
-            // Stop the current MediaRecorder if it's active
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
-            // Clear the timer interval
             clearInterval(timerInterval);
             
-            // Release Wake Lock
             releaseWakeLock();
 
-            // Reset UI elements to the initial state
             livePreview.classList.remove('recording');
             recordButton.textContent = 'Start Recording';
             recordButton.classList.remove('recording');
             statusDisplay.textContent = "Ready to record.";
-            secondsRemaining = 30; // Reset timer display for next start
+            secondsRemaining = RECORDING_DURATION; 
             updateTimerDisplay();
-            // Removed resetLiveZoom();
-            resetReplayZoom(); // Reset replay zoom when recording stops
             replayVideo.classList.remove('portrait-orientation'); // Clear orientation class
+            replayVideo.style.transform = 'none'; // Reset replay video transform
+            replayVideo.pause(); // Ensure replay video is paused when recording stops
+            replayVideo.currentTime = 0; // Reset replay video to beginning
         }
         
-        // Function to update the countdown timer
+        // Update timer countdown
         function updateTimer() {
-            secondsRemaining--; // Decrement seconds
-            updateTimerDisplay(); // Update the display
+            secondsRemaining--;
+            updateTimerDisplay();
             
-            // If the timer reaches zero, stop the current segment (this will trigger onstop and then restart)
             if (secondsRemaining <= 0) {
-                clearInterval(timerInterval); // Stop the current timer
-                // MediaRecorder.stop() will trigger mediaRecorder.onstop, which handles the next segment start.
+                clearInterval(timerInterval);
                 if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
+                    mediaRecorder.stop(); // This will trigger onstop and restart the recording loop
                 }
             }
         }
         
-        // Function to format and update the timer display
+        // Update timer display
         function updateTimerDisplay() {
             const seconds = secondsRemaining % 60;
-            // Format to "MM:SS" (here, always "00:SS")
             timerDisplay.textContent = `00:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        // --- Live Video Zoom Functions (NO BUTTONS) ---
-        // Retained for potential future use or if mobile browser zoom is still desired via JS
-        // Not hooked up to buttons anymore
-        function zoomInLive() { /* functionality removed from buttons */ }
-        function zoomOutLive() { /* functionality removed from buttons */ }
-        function resetLiveZoom() { /* functionality removed from buttons */ }
-        function updateLiveZoomButtonsState() { /* functionality removed from buttons */ }
-
-
-        // --- Replay Video Zoom Functions (with Slider) ---
-        function updateReplayZoomFromSlider() {
-            // Convert slider value (50-200) to zoom scale (0.5-2.0)
-            currentReplayZoom = replayZoomSlider.value / 100;
-            updateReplayVideoTransform(); // Apply combined transform function
-        }
-
-        function resetReplayZoom() {
-            currentReplayZoom = 1.0;
-            replayZoomSlider.value = 100; // Reset slider to center (1.0x)
-            updateReplayVideoTransform(); // Apply combined transform function
-        }
-
-        // Function to update replay video transform including scale and rotation
-        function updateReplayVideoTransform() {
-            let transformString = `scale(${currentReplayZoom})`;
-            // Only apply rotation if the video was recorded in portrait and we are playing it back
-            // in a context where its natural orientation would be horizontal.
-            // This logic assumes `lastRecordedOrientation` is correctly set based on the original capture.
-            if (replayVideo.classList.contains('portrait-orientation')) {
-                transformString += ' rotate(90deg)'; 
-            }
-            replayVideo.style.transform = transformString;
         }
 
         // --- Camera Flip Function ---
@@ -649,14 +507,21 @@
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
                 try {
-                    wakeLockSentinel = await navigator.wakeLock.request('screen');
-                    console.log('Wake Lock is active!');
-                    wakeLockSentinel.onrelease = () => {
-                        console.log('Wake Lock was released');
-                        wakeLockSentinel = null; // Clear the sentinel on release
-                    };
+                    if (wakeLockSentinel === null) {
+                        wakeLockSentinel = await navigator.wakeLock.request('screen');
+                        console.log('Wake Lock is active!');
+                        wakeLockSentinel.onrelease = () => {
+                            console.log('Wake Lock was released');
+                            wakeLockSentinel = null;
+                        };
+                    } else {
+                        console.log('Wake Lock already active.');
+                    }
                 } catch (err) {
-                    console.error(`${err.name}, ${err.message}`);
+                    console.error(`${err.name}: ${err.message}`);
+                    if (err.name === 'NotAllowedError') {
+                        statusDisplay.textContent = "Wake Lock denied: Access to screen wake lock is disallowed. This often requires the site to be served over HTTPS and/or user permission. Please ensure your site is on HTTPS.";
+                    }
                 }
             } else {
                 console.warn('Wake Lock API not supported by this browser.');
@@ -666,7 +531,7 @@
         async function releaseWakeLock() {
             if (wakeLockSentinel !== null) {
                 await wakeLockSentinel.release();
-                wakeLockSentinel = null; // Explicitly set to null after release
+                wakeLockSentinel = null;
                 console.log('Wake Lock released!');
             }
         }
@@ -680,19 +545,15 @@
             }
         });
 
-        // Removed event listeners for live video zoom buttons
         cameraFlipButton.addEventListener('click', flipCamera);
 
-        // Event listener for replay zoom slider
-        replayZoomSlider.addEventListener('input', updateReplayZoomFromSlider);
-
-        // Auto-stop recording when replay video is played
-        replayVideo.addEventListener('play', () => {
-            if (recordButton.classList.contains('recording')) {
-                console.log('Replay video started playing, stopping current recording.');
-                stopRecording();
-            }
-        });
+        // REMOVED: Auto-stop recording when replay video is played
+        // replayVideo.addEventListener('play', () => {
+        //     if (recordButton.classList.contains('recording')) {
+        //         console.log('Replay video started playing, stopping current recording.');
+        //         stopRecording();
+        //     }
+        // });
         
         // Initialize the application when the page loads
         init();
