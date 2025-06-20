@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Mobile-Optimized Webcam Recorder with Zoom & Camera Flip</title>
     <style>
         body {
@@ -36,14 +36,18 @@
             display: flex; /* Use flexbox for better mobile stacking */
             flex-direction: column; /* Stack vertically by default */
             gap: 20px;
+            align-items: center; /* Center items when live video is a thumbnail */
         }
 
         /* Media query for larger screens (e.g., tablets and desktops) */
         @media (min-width: 768px) {
             .container {
                 flex-direction: row; /* Two columns on larger screens */
-                display: grid; /* Switch to grid for fixed columns */
-                grid-template-columns: 1fr 1fr;
+                justify-content: center; /* Center the two main blocks */
+                align-items: flex-start; /* Align items to the top */
+            }
+            .video-container {
+                margin: 0; /* Reset margin for grid alignment on desktop */
             }
         }
         
@@ -53,31 +57,57 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            flex-grow: 1; /* Allows video container to grow in flex layout */
+            /* Constraints for thumbnail container */
+            max-width: 220px; /* Slightly larger than video to accommodate padding/border */
+            margin: 0 auto; /* Center the container on mobile */
+            flex-grow: 0; /* No longer grows, fits content */
+            flex-shrink: 0; /* No longer shrinks */
+            display: flex; /* Use flexbox to center video inside */
+            justify-content: center;
+            align-items: center;
+            padding: 10px; /* Some internal padding */
         }
         
         video#liveVideo { /* Specific selector for live video for zoom */
-            width: 100%;
+            width: 100%; /* Still 100% of its parent */
+            max-width: 200px; /* make it a thumbnail */
             height: auto; /* Maintain aspect ratio */
             display: block;
             background-color: #000;
             transform: scale(1); /* Initial scale for zoom */
             transition: transform 0.1s ease-out; /* Smooth zoom transition */
             transform-origin: center center; /* Zoom from the center */
+            margin: 0 auto; /* Center the thumbnail */
+        }
+
+        /* New style for the replay video wrapper */
+        .replay-video-area {
+            position: relative; /* Crucial for absolute positioning of its children */
+            width: 100%; /* Take full width of its parent (.replay-section) initially */
+            max-width: 600px; /* Suitable max width for the larger replay video */
+            margin: 0 auto; /* Center the video area itself */
+            border-radius: 8px; /* Consistent rounded corners */
+            overflow: hidden; /* To clip any overflow from zoom or rotation */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Consistent shadow */
+            background-color: #000; /* Ensure background if video not loaded */
+            display: block; /* Ensure it behaves like a block element for centering */
         }
 
         video#replayVideo {
-            width: 100%;
-            max-width: 200px; /* Thumbnail size */
+            width: 100%; /* Now 100% of .replay-video-area */
             height: auto;
             display: block;
             background-color: #000;
-            margin: 0 auto; /* Center the thumbnail */
-            border-radius: 8px; /* Match other elements */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow */
-            transform: scale(1); /* Initial scale for replay zoom */
+            /* Removed border-radius and box-shadow from video itself, moved to wrapper */
+            transform: scale(1); /* Initial scale for replay zoom, managed by JS */
             transition: transform 0.1s ease-out; /* Smooth zoom transition */
             transform-origin: center center;
+            object-fit: contain; /* Ensure video fits within its bounds, especially after rotation */
+        }
+
+        /* Styles for portrait orientation of the replay video if it needs to be rotated */
+        video#replayVideo.portrait-orientation {
+            /* Transform is handled by JS for both scale and rotate */
         }
         
         .live-indicator {
@@ -110,20 +140,24 @@
             z-index: 10; /* Ensure timer is above video */
         }
 
+        /* Zoom controls for live video (inside video-container) */
         .zoom-controls {
             position: absolute;
-            top: 10px;
+            bottom: 10px;
             right: 10px;
             z-index: 10;
             display: flex;
             gap: 5px;
         }
 
+        /* Zoom controls for replay video (inside replay-video-area) */
         .replay-zoom-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 10;
             display: flex;
-            justify-content: center;
             gap: 5px;
-            margin-top: 10px;
         }
 
         .zoom-button {
@@ -231,7 +265,10 @@
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #ecf0f1;
-            text-align: center; /* Center the thumbnail and its controls */
+            /* Use flexbox to center the video area and title */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         .status {
@@ -249,9 +286,10 @@
     <div class="section-title">Instructions</div>
     <ul>
         <li>Click "Start Recording" to begin a series of 30-second recordings.</li>
-        <li>Each 30-second clip will automatically replace the "Last Recorded Video" below.</li>
+        <li>The **live video preview** will appear as a small thumbnail.</li>
+        <li>Each 30-second clip will automatically replace the "Last Recorded Video" below, which will be a larger view.</li>
         <li>Click "Stop Recording" to end the continuous recording cycle.</li>
-        <li>Use the '+' and '-' buttons to zoom the **live video** feed.</li>
+        <li>Use the '+' and '-' buttons to zoom the **live video thumbnail** feed.</li>
         <li>Click the 'Flip Camera' button to switch between front and back cameras (on mobile devices).</li>
         <li>Use the '+' and '-' buttons below the recorded video to zoom in/out on the **last recorded video**.</li>
         <li>Playing the "Last Recorded Video" will automatically stop any ongoing recording.</li>
@@ -283,11 +321,13 @@
     </div>
     
     <div class="replay-section">
-        <div class="section-title">Last Recorded Video (Thumbnail)</div>
-        <video id="replayVideo" controls loop playsinline></video>
-        <div class="replay-zoom-controls">
-            <button id="replayZoomOutButton" class="zoom-button">-</button>
-            <button id="replayZoomInButton" class="zoom-button">+</button>
+        <div class="section-title">Last Recorded Video</div>
+        <div class="replay-video-area"> <!-- NEW WRAPPER -->
+            <video id="replayVideo" controls loop playsinline></video>
+            <div class="replay-zoom-controls">
+                <button id="replayZoomOutButton" class="zoom-button">-</button>
+                <button id="replayZoomInButton" class="zoom-button">+</button>
+            </div>
         </div>
     </div>
 
@@ -311,7 +351,7 @@
         let timerInterval;
         let secondsRemaining = 30;
         let mediaStream; // Stores the active media stream from webcam/mic
-        let supportedMimeType = 'video/webm'; // Default MIME type
+        let supportedMimeType = 'video/mp4'; // Default MIME type, will be determined at init
         let currentLiveZoom = 1.0; // Initial zoom level for live video
         let currentReplayZoom = 1.0; // Initial zoom level for replay video
         const ZOOM_STEP = 0.1; // Amount to change zoom by
@@ -319,6 +359,7 @@
         const MIN_ZOOM = 0.5; // Minimum zoom level
         let currentCameraFacing = 'user'; // 'user' for front, 'environment' for back
         let wakeLockSentinel = null; // For screen wake lock
+        let lastRecordedOrientation = 'landscape'; // Stores orientation of the last recorded video
 
         // Initialize the application: Request access to media devices
         async function init() {
@@ -327,16 +368,30 @@
                 statusDisplay.textContent = "Camera ready. Click 'Start Recording' to begin.";
 
                 // Determine the best supported MIME type for MediaRecorder
-                if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
-                    supportedMimeType = 'video/webm; codecs=vp9';
-                } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8')) {
-                    supportedMimeType = 'video/webm; codecs=vp8';
-                } else if (MediaRecorder.isTypeSupported('video/webm')) {
-                    supportedMimeType = 'video/webm';
-                } else {
-                    console.warn('No webm video recording supported. Fallback to default.');
-                    statusDisplay.textContent = "Your browser may not fully support video recording.";
-                    recordButton.disabled = true; // Disable if no suitable type found
+                // Prioritize MP4 for wider mobile compatibility
+                const potentialMimeTypes = [
+                    'video/mp4; codecs="avc1.424028"', // H.264 High Profile 4.2
+                    'video/mp4',
+                    'video/webm; codecs=vp9',
+                    'video/webm; codecs=vp8',
+                    'video/webm'
+                ];
+
+                for (const type of potentialMimeTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        supportedMimeType = type;
+                        break;
+                    }
+                }
+                
+                if (!MediaRecorder.isTypeSupported(supportedMimeType)) {
+                     console.warn('No suitable video recording MIME type found, defaulting to video/webm.');
+                     // Fallback to a very generic type if none of the preferred are supported.
+                     supportedMimeType = 'video/webm'; 
+                     if (!MediaRecorder.isTypeSupported(supportedMimeType)) {
+                        statusDisplay.textContent = "Your browser may not fully support video recording.";
+                        recordButton.disabled = true;
+                     }
                 }
                 console.log('Using MIME type for MediaRecorder:', supportedMimeType);
 
@@ -356,17 +411,20 @@
                 mediaStream.getTracks().forEach(track => track.stop());
             }
             try {
+                // Request media stream with the specified facing mode
                 mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: facingMode },
                     audio: true
                 });
-                liveVideo.srcObject = mediaStream;
+                liveVideo.srcObject = mediaStream; // Assign stream to live video element
                 console.log(`Camera switched to: ${facingMode}`);
                 statusDisplay.textContent = `Camera ready (${facingMode === 'user' ? 'Front' : 'Back'}). Click 'Start Recording'.`;
+                recordButton.disabled = false; // Re-enable record button if camera access succeeds
+                cameraFlipButton.disabled = false; // Re-enable camera flip
             } catch (error) {
                 console.error(`Error switching to ${facingMode} camera:`, error);
                 statusDisplay.textContent = `Error switching camera. ${error.name}: ${error.message}`;
-                // Revert to previous camera if switching failed
+                // Revert to previous camera if switching failed or access denied
                 currentCameraFacing = facingMode === 'user' ? 'environment' : 'user';
                 recordButton.disabled = true; // Disable recording if camera access fails
             }
@@ -392,6 +450,30 @@
             // Reset zoom to default when recording starts
             resetLiveZoom();
             resetReplayZoom(); // Also reset replay zoom
+
+            // Determine and store the orientation of the live stream at the start of recording
+            // This is crucial for correctly orienting the replay video later.
+            // Check video dimensions after metadata loads
+            liveVideo.onloadedmetadata = () => {
+                if (liveVideo.videoHeight > liveVideo.videoWidth) {
+                    lastRecordedOrientation = 'portrait';
+                } else {
+                    lastRecordedOrientation = 'landscape';
+                }
+                console.log('Live video orientation detected:', lastRecordedOrientation);
+                // Remove the event listener to prevent multiple calls
+                liveVideo.onloadedmetadata = null; 
+            };
+
+            // If metadata already loaded (e.g., camera already active), determine immediately
+            if (liveVideo.readyState >= 1) { // HAVE_METADATA or greater
+                if (liveVideo.videoHeight > liveVideo.videoWidth) {
+                    lastRecordedOrientation = 'portrait';
+                } else {
+                    lastRecordedOrientation = 'landscape';
+                }
+                console.log('Live video orientation detected (pre-loaded):', lastRecordedOrientation);
+            }
 
             // Request Wake Lock to keep screen on
             requestWakeLock();
@@ -425,6 +507,15 @@
                 replayVideo.load(); // Reload the video element to ensure playback
                 // No auto-play here, as user explicitly wanted replay to stop recording.
                 // Playback will be manually initiated or triggered by replayVideo.onplay event.
+
+                // Set the orientation class on the replay video based on the recorded orientation
+                // This will apply the rotation via updateReplayVideoTransform
+                if (lastRecordedOrientation === 'portrait') {
+                    replayVideo.classList.add('portrait-orientation');
+                } else {
+                    replayVideo.classList.remove('portrait-orientation');
+                }
+                updateReplayVideoTransform(); // Apply transform after setting class
 
                 // Add an error listener for the replay video to catch playback issues
                 replayVideo.onerror = (e) => {
@@ -476,6 +567,7 @@
             updateTimerDisplay();
             resetLiveZoom(); // Reset live zoom when recording stops
             resetReplayZoom(); // Reset replay zoom when recording stops
+            replayVideo.classList.remove('portrait-orientation'); // Clear orientation class
         }
         
         // Function to update the countdown timer
@@ -532,7 +624,7 @@
         function zoomInReplay() {
             if (currentReplayZoom < MAX_ZOOM) {
                 currentReplayZoom += ZOOM_STEP;
-                replayVideo.style.transform = `scale(${currentReplayZoom})`;
+                updateReplayVideoTransform(); // Call combined transform function
                 updateReplayZoomButtonsState();
             }
         }
@@ -540,20 +632,36 @@
         function zoomOutReplay() {
             if (currentReplayZoom > MIN_ZOOM) {
                 currentReplayZoom -= ZOOM_STEP;
-                replayVideo.style.transform = `scale(${currentReplayZoom})`;
+                updateReplayVideoTransform(); // Call combined transform function
                 updateReplayZoomButtonsState();
             }
         }
 
         function resetReplayZoom() {
             currentReplayZoom = 1.0;
-            replayVideo.style.transform = `scale(${currentReplayZoom})`;
+            updateReplayVideoTransform(); // Call combined transform function
             updateReplayZoomButtonsState();
         }
 
         function updateReplayZoomButtonsState() {
             replayZoomInButton.disabled = currentReplayZoom >= MAX_ZOOM;
             replayZoomOutButton.disabled = currentReplayZoom <= MIN_ZOOM;
+        }
+
+        // Function to update replay video transform including scale and rotation
+        function updateReplayVideoTransform() {
+            let transformString = `scale(${currentReplayZoom})`;
+            // Only apply rotation if the video was recorded in portrait and we are playing it back
+            // in a context where its natural orientation would be horizontal.
+            // This logic assumes `lastRecordedOrientation` is correctly set based on the original capture.
+            if (replayVideo.classList.contains('portrait-orientation')) {
+                transformString += ' rotate(90deg)'; 
+                // To keep the rotated video centered and fill the area,
+                // we might need to adjust translate properties, but object-fit: contain helps.
+                // For a more precise fit, especially with zoom, one might also adjust scale based on
+                // videoWidth/videoHeight after rotation, but for simplicity, we rely on object-fit.
+            }
+            replayVideo.style.transform = transformString;
         }
 
         // --- Camera Flip Function ---
