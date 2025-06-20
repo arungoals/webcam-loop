@@ -1,272 +1,273 @@
-Of course. I've updated the code to enhance its usability, speed, and aesthetics, transforming it into a modern, simple, and beautiful-looking application.
-
-The primary goal was to simplify the user experience, making the core functions of recording and replaying intuitive while giving the entire application a professional and clean "dark mode" look.
-
-### Key Improvements:
-
-  * **Modern Aesthetics:**
-
-      * A complete visual overhaul with a sleek dark theme, which is easier on the eyes and makes the video content pop.
-      * Buttons now use intuitive SVG icons (Record, Flip Camera) for better and faster recognition.
-      * Improved typography with the "Poppins" font from Google Fonts for a clean, modern feel.
-      * Consistent spacing, rounded corners, and subtle shadows create a polished and cohesive user interface.
-
-  * **Enhanced Usability & Simplicity:**
-
-      * **Simplified Recording Flow:** Instead of a confusing continuous loop, the app now works on a "one-press, one-clip" model. You press "Record," it records for exactly 15 seconds, and then stops, presenting the replay. This is far more predictable for the user.
-      * **Visual Progress Indicator:** The text timer is replaced with a dynamic circular progress bar that wraps around the record button. This provides immediate, intuitive feedback on the recording's progress.
-      * **Logical Layout:** On desktops, the live view and replay are now side-by-side, allowing for easy comparison. On mobile, they stack vertically for a natural scrolling experience. The live video is now prominent, not a small thumbnail.
-      * **Clearer Status Updates:** The status text is better integrated and provides clear, concise feedback about what the app is doing (e.g., "Ready," "Recording...", "Finished").
-
-  * **Performance & Code Quality:**
-
-      * **Optimized Drawing:** The new progress indicator uses `requestAnimationFrame` for smooth, efficient animation without bogging down the browser.
-      * **Refactored JavaScript:** The code is better organized with a clearer state management (`isRecording`) and a more streamlined recording function.
-      * **Robust Error Handling:** The core error handling and camera logic from the original code have been preserved and integrated into the new structure.
-
-Here is the updated and improved code:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>15-Second Webcam Recorder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <title>15-Second Looping Webcam Recorder</title>
     <style>
-        :root {
-            --background-color: #1a1a1a;
-            --surface-color: #2c2c2c;
-            --primary-color: #007aff;
-            --primary-hover-color: #0056b3;
-            --text-color: #f0f0f0;
-            --text-muted-color: #8e8e93;
-            --border-radius: 12px;
-            --shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
         body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 1200px;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        header {
-            text-align: center;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2.5em;
-            font-weight: 600;
-        }
-
-        .video-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        /* Desktop layout: Side-by-side video views */
-        @media (min-width: 768px) {
-            .video-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        .video-wrapper {
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            padding: 15px;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 90%; /* Increased max-width for better mobile use */
+            margin: 0 auto;
+            padding: 10px; /* Reduced padding for mobile */
+            background-color: #f5f7fa;
+            color: #333;
         }
         
-        .video-title {
-            font-weight: 600;
-            font-size: 1.1em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px; /* Adjusted margin */
+            font-size: 1.8em; /* Responsive font size */
         }
 
-        .live-indicator {
-            width: 10px;
-            height: 10px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
+        .orientation-message { /* Renamed class for clarity */
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 5px; /* Reduced padding */
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            color: #856404;
+            font-weight: bold;
+            font-size: 0.85em; /* Smaller font size */
+        }
+        
+        .container {
+            display: flex; /* Use flexbox for better mobile stacking */
+            flex-direction: column; /* Stack vertically by default */
+            gap: 20px;
+            align-items: center; /* Center items when live video is a thumbnail */
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
+        /* Media query for larger screens (e.g., tablets and desktops) */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row; /* Two columns on larger screens */
+                justify-content: center; /* Center the two main blocks */
+                align-items: flex-start; /* Align items to the top */
+            }
+            .video-container {
+                margin: 0; /* Reset margin for grid alignment on desktop */
+            }
         }
-
-        .video-area {
+        
+        .video-container {
             position: relative;
-            width: 100%;
             background-color: #000;
             border-radius: 8px;
             overflow: hidden;
-            aspect-ratio: 16 / 9;
-            touch-action: none; /* For pinch-zoom gestures */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            /* Constraints for thumbnail container */
+            max-width: 220px; /* Slightly larger than video to accommodate padding/border */
+            margin: 0 auto; /* Center the container on mobile */
+            flex-grow: 0; /* No longer grows, fits content */
+            flex-shrink: 0; /* No longer shrinks */
+            display: flex; /* Use flexbox to center video inside */
+            justify-content: center;
+            align-items: center;
+            padding: 10px; /* Some internal padding */
         }
         
-        video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform-origin: 0% 0%;
+        video#liveVideo { /* Specific selector for live video for zoom */
+            width: 100%; /* Still 100% of its parent */
+            max-width: 200px; /* make it a thumbnail */
+            height: auto; /* Maintain aspect ratio */
+            display: block;
+            background-color: #000;
+            transform: scale(1); /* No zoom, but keep for consistency if needed */
+            transition: none; /* No transition for zoom */
+            transform-origin: center center;
+            margin: 0 auto; /* Center the thumbnail */
         }
 
+        /* Style for the replay video wrapper */
+        .replay-video-area {
+            position: relative; /* Crucial for absolute positioning of its children */
+            width: 100%; /* Take full width of its parent (.replay-section) initially */
+            max-width: 600px; /* Suitable max width for the larger replay video */
+            margin: 0 auto; /* Center the video area itself */
+            border-radius: 8px; /* Consistent rounded corners */
+            overflow: hidden; /* To clip any overflow from zoom or rotation */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Consistent shadow */
+            background-color: #000; /* Ensure background if video not loaded */
+            display: block; /* Ensure it behaves like a block element for centering */
+            /* Add touch-action to prevent default browser gestures */
+            touch-action: none;
+        }
+
+        video#replayVideo {
+            width: 100%; /* Now 100% of .replay-video-area */
+            height: auto;
+            display: block;
+            background-color: #000;
+            transform: translate(0px, 0px) scale(1); /* Initial transform for pan/zoom */
+            transition: none; /* Transition handled by JS */
+            transform-origin: 0% 0%; /* Origin for pan/zoom is top-left of the video content */
+            object-fit: contain; /* Ensure video fits within its bounds, especially after rotation */
+        }
+
+        /* Styles for portrait orientation of the replay video if it needs to be rotated */
         video#replayVideo.portrait-orientation {
-            /* JS will handle transform for pan/zoom/rotate */
+            /* This class will be applied, but transform will be managed by JS for pan/zoom/rotate */
+        }
+        
+        .live-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: none;
+            z-index: 10; /* Ensure indicator is above video */
+        }
+        
+        .recording .live-indicator {
+            display: block;
+        }
+        
+        .timer {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 10; /* Ensure timer is above video */
+        }
+        
+        .controls-and-instructions {
+            display: flex;
+            flex-direction: column; /* Stack controls and instructions */
+            gap: 20px; /* Space between sections */
         }
 
-        .control-panel {
+        /* Order adjustment for mobile and desktop */
+        .video-container {
+            order: 1; /* Video first on mobile */
+        }
+        .controls-and-instructions {
+            order: 2; /* Controls and instructions second on mobile */
+        }
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row; /* Two columns on larger screens */
+                justify-content: center; /* Center the two main blocks */
+                align-items: flex-start; /* Align items to the top */
+            }
+            .video-container {
+                margin: 0; /* Reset margin for grid alignment on desktop */
+            }
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            flex-grow: 1; /* Allow button to grow in flex container */
+            max-width: 200px; /* Limit button width */
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        button.recording {
+            background-color: #e74c3c;
+        }
+        
+        button.recording:hover {
+            background-color: #c0392b;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+        
+        .replay-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            /* Use flexbox to center the video area and title */
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
-            padding: 20px;
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-        }
-
-        .main-controls {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .record-button-wrapper {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #progress-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: rotate(-90deg); /* Start from the top */
-        }
-
-        button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            transition: transform 0.2s ease;
-        }
-
-        button:hover:not(:disabled) {
-            transform: scale(1.1);
-        }
-
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        #recordButton {
-            width: 64px;
-            height: 64px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
-            transition: background-color 0.3s;
-        }
-
-        #recordButton:hover:not(:disabled) {
-            background-color: #c0392b;
-        }
-
-        #cameraFlipButton {
-            width: 50px;
-            height: 50px;
         }
         
         .status {
-            font-size: 1em;
-            color: var(--text-muted-color);
-            min-height: 1.5em;
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+            color: #7f8c8d;
+            min-height: 20px;
         }
     </style>
 </head>
 <body>
+    <h1>15-Second Looping Webcam Recorder</h1>
 
-    <div class="app-container">
-        <header>
-            <h1>15-Second Recorder</h1>
-        </header>
-
-        <div class="video-grid">
-            <div class="video-wrapper">
-                <div class="video-title"><span class="live-indicator"></span>Live Preview</div>
-                <div class="video-area">
-                    <video id="liveVideo" autoplay muted playsinline></video>
-                </div>
-            </div>
-            <div class="video-wrapper">
-                <div class="video-title">Replay</div>
-                <div class="video-area" id="replayVideoArea">
-                    <video id="replayVideo" loop playsinline controls></video>
-                </div>
-            </div>
+    <div class="orientation-message">
+        Use the app in landscape orientation on mobile devices
+    </div>
+    
+    <div class="container">
+        <div class="video-container" id="livePreview">
+            <div class="live-indicator">LIVE</div>
+            <video id="liveVideo" autoplay muted playsinline></video>
+            <div class="timer" id="timerDisplay">00:15</div>
         </div>
-
-        <div class="control-panel">
-            <div class="main-controls">
-                <button id="cameraFlipButton" title="Flip Camera">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;stroke: var(--text-color);">
-                        <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v2.5"></path>
-                        <path d="M22 17a2 2 0 0 1-2 2h-1l-2-2h3v-2Z"></path>
-                        <path d="m7 15-4-4 4-4"></path>
-                        <path d="m20.5 14.5.5.5-2 2"></path>
-                    </svg>
-                </button>
-                <div class="record-button-wrapper">
-                    <canvas id="progress-canvas" width="80" height="80"></canvas>
-                    <button id="recordButton" title="Start Recording">
-                         <svg viewBox="0 0 24 24" fill="white" width="32" height="32"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path></svg>
-                    </button>
-                </div>
+        
+        <div class="controls-and-instructions">
+            <div class="controls">
+                <button id="recordButton">Start Recording</button>
+                <button id="cameraFlipButton">Flip Camera</button>
             </div>
             <div class="status" id="status">Ready to record</div>
+            
+        </div>
+    </div>
+    
+    <div class="replay-section">
+        <div class="section-title">Recent 15-second replay</div>
+        <div class="replay-video-area"> <!-- Wrapper for replay video -->
+            <video id="replayVideo" controls loop playsinline></video>
         </div>
     </div>
 
@@ -275,252 +276,420 @@ Here is the updated and improved code:
         const liveVideo = document.getElementById('liveVideo');
         const replayVideo = document.getElementById('replayVideo');
         const recordButton = document.getElementById('recordButton');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const livePreview = document.getElementById('livePreview');
         const statusDisplay = document.getElementById('status');
         const cameraFlipButton = document.getElementById('cameraFlipButton');
-        const replayVideoArea = document.getElementById('replayVideoArea');
-        const progressCanvas = document.getElementById('progress-canvas');
-        const progressCtx = progressCanvas.getContext('2d');
+        const replayVideoArea = document.querySelector('.replay-video-area'); // New: Get the wrapper for replay video
         
-        // --- State and Configuration ---
+        // Global variables
         let mediaRecorder;
         let recordedChunks = [];
-        let mediaStream;
-        let currentCameraFacing = 'user';
-        let wakeLockSentinel = null;
-        let isRecording = false;
-        const RECORDING_DURATION = 15000; // 15 seconds in milliseconds
+        let timerInterval;
+        const RECORDING_DURATION = 15; // Define recording duration in seconds
+        let secondsRemaining = RECORDING_DURATION; 
+        let mediaStream; // Stores the active media stream from webcam/mic
+        let supportedMimeType = 'video/mp4'; // Default MIME type, will be determined at init
+        let currentCameraFacing = 'user'; // 'user' for front, 'environment' for back
+        let wakeLockSentinel = null; // For screen wake lock
+        let lastRecordedOrientation = 'landscape'; // Stores orientation of the last recorded video
 
-        // Replay video pan/zoom state
-        let currentReplayZoom = 1.0, replayPanX = 0, replayPanY = 0;
-        let initialPinchDistance = null, lastTouchX = 0, lastTouchY = 0;
+        // Replay video pan/zoom state variables
+        let currentReplayZoom = 1.0;
+        let replayPanX = 0;
+        let replayPanY = 0;
+        const MAX_ZOOM = 3.0; // Increased max zoom for more detail
+        const MIN_ZOOM = 1.0; // Start at 1.0, no zoom out beyond original size
+
+        // Touch event tracking variables for replay video
+        let initialPinchDistance = null;
+        let initialReplayZoom = 1.0;
+        let initialReplayPanX = 0;
+        let initialReplayPanY = 0;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
         let isPinching = false;
 
 
-        // --- Initialization ---
+        // Initialize the application: Request access to media devices
         async function init() {
             try {
-                await getCameraStream(currentCameraFacing);
-                statusDisplay.textContent = "Camera ready. Press the red button to record.";
-                recordButton.disabled = false;
-                cameraFlipButton.disabled = false;
+                await getCameraStream(currentCameraFacing); // Get initial camera stream
+                statusDisplay.textContent = "Camera ready. Click 'Start Recording' to begin.";
+
+                // Determine the best supported MIME type for MediaRecorder
+                // Prioritize MP4 for wider mobile compatibility
+                const potentialMimeTypes = [
+                    'video/mp4; codecs="avc1.424028"', // H.264 High Profile 4.2
+                    'video/mp4',
+                    'video/webm; codecs=vp9',
+                    'video/webm; codecs=vp8',
+                    'video/webm'
+                ];
+
+                for (const type of potentialMimeTypes) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        supportedMimeType = type;
+                        break;
+                    }
+                }
+                
+                if (!MediaRecorder.isTypeSupported(supportedMimeType)) {
+                     console.warn('No suitable video recording MIME type found, defaulting to video/webm.');
+                     supportedMimeType = 'video/webm'; 
+                     if (!MediaRecorder.isTypeSupported(supportedMimeType)) {
+                        statusDisplay.textContent = "Your browser may not fully support video recording.";
+                        recordButton.disabled = true;
+                     }
+                }
+                console.log('Using MIME type for MediaRecorder:', supportedMimeType);
+
             } catch (error) {
+                // Handle errors if media access is denied or unavailable
                 console.error('Error accessing media devices:', error);
-                statusDisplay.textContent = "Could not access camera. Please check permissions.";
-                recordButton.disabled = true;
-                cameraFlipButton.disabled = true;
+                statusDisplay.textContent = "Error accessing camera/microphone. Please check permissions. " + error.name;
+                recordButton.disabled = true; // Disable the record button if camera/mic cannot be accessed
+                cameraFlipButton.disabled = true; // Disable camera flip if no access
             }
         }
 
+        // Function to get camera stream based on facing mode
         async function getCameraStream(facingMode) {
+            // Stop any existing tracks to release camera/mic
             if (mediaStream) {
                 mediaStream.getTracks().forEach(track => track.stop());
             }
             try {
+                // Request media stream with the specified facing mode
                 mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { 
-                        facingMode: facingMode,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    },
+                    video: { facingMode: facingMode },
                     audio: true
                 });
-                liveVideo.srcObject = mediaStream;
-                currentCameraFacing = facingMode;
+                liveVideo.srcObject = mediaStream; // Assign stream to live video element
+                console.log(`Camera switched to: ${facingMode}`);
+                statusDisplay.textContent = `Camera ready (${facingMode === 'user' ? 'Front' : 'Back'}). Click 'Start Recording'.`;
+                recordButton.disabled = false; // Re-enable record button if camera access succeeds
+                cameraFlipButton.disabled = false; // Re-enable camera flip
             } catch (error) {
                 console.error(`Error switching to ${facingMode} camera:`, error);
-                statusDisplay.textContent = "Error switching camera.";
-                throw error;
+                statusDisplay.textContent = `Error switching camera. ${error.name}: ${error.message}`;
+                currentCameraFacing = facingMode === 'user' ? 'environment' : 'user'; // Revert
+                recordButton.disabled = true; // Disable recording if camera access fails
             }
         }
         
-        // --- Recording Logic ---
+        // Function to start a 15-second recording segment
         function startRecording() {
-            if (!mediaStream || isRecording) return;
-            isRecording = true;
-            recordedChunks = [];
+            if (!mediaStream) {
+                statusDisplay.textContent = "Error: Camera/Microphone not available.";
+                return;
+            }
             
-            statusDisplay.textContent = "Recording...";
-            recordButton.disabled = true;
-            cameraFlipButton.disabled = true;
+            recordedChunks = [];
+            secondsRemaining = RECORDING_DURATION; 
+            updateTimerDisplay();
+            
+            clearInterval(timerInterval);
 
-            const mimeType = ['video/mp4', 'video/webm'].find(MediaRecorder.isTypeSupported) || 'video/webm';
-            mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
-
-            mediaRecorder.ondataavailable = event => {
-                if (event.data.size > 0) recordedChunks.push(event.data);
+            // Determine and store the orientation of the live stream at the start of recording
+            liveVideo.onloadedmetadata = () => {
+                if (liveVideo.videoHeight > liveVideo.videoWidth) {
+                    lastRecordedOrientation = 'portrait';
+                } else {
+                    lastRecordedOrientation = 'landscape';
+                }
+                console.log('Live video orientation detected:', lastRecordedOrientation);
+                liveVideo.onloadedmetadata = null; 
             };
+            if (liveVideo.readyState >= 1) { // If metadata already loaded
+                if (liveVideo.videoHeight > liveVideo.videoWidth) {
+                    lastRecordedOrientation = 'portrait';
+                } else {
+                    lastRecordedOrientation = 'landscape';
+                }
+                console.log('Live video orientation detected (pre-loaded):', lastRecordedOrientation);
+            }
 
+            requestWakeLock();
+            
+            mediaRecorder = new MediaRecorder(mediaStream, { mimeType: supportedMimeType });
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
             mediaRecorder.onstop = () => {
-                isRecording = false;
-                statusDisplay.textContent = "Processing video...";
+                releaseWakeLock();
 
-                const blob = new Blob(recordedChunks, { type: mimeType });
+                const blob = new Blob(recordedChunks, { type: supportedMimeType });
                 const videoUrl = URL.createObjectURL(blob);
-                replayVideo.src = videoUrl;
-                replayVideo.load();
-                replayVideo.play().catch(e => console.error("Replay auto-play failed:", e));
+                
+                console.log('Recorded Blob:', blob);
+                console.log('Video URL created:', videoUrl);
 
-                // Detect orientation for replay
-                const videoTrack = mediaStream.getVideoTracks()[0];
-                const settings = videoTrack.getSettings();
-                if (settings.height > settings.width) {
+                replayVideo.src = videoUrl;
+                replayVideo.style.display = 'block';
+                replayVideo.load();
+                replayVideo.play().catch(e => console.error("Error attempting to auto-play replay video:", e)); // Auto-play the replay video
+
+                // Set the orientation class on the replay video based on the recorded orientation
+                if (lastRecordedOrientation === 'portrait') {
                     replayVideo.classList.add('portrait-orientation');
                 } else {
                     replayVideo.classList.remove('portrait-orientation');
                 }
-                resetReplayTransform();
+                resetReplayTransform(); // Reset pan/zoom on new video load
                 
-                statusDisplay.textContent = "Finished. Press record for a new clip.";
-                recordButton.disabled = false;
-                cameraFlipButton.disabled = false;
-                releaseWakeLock();
-            };
-
-            mediaRecorder.start();
-            animateProgress(RECORDING_DURATION);
-            requestWakeLock();
-            
-            setTimeout(() => {
-                if (mediaRecorder.state === 'recording') {
-                    mediaRecorder.stop();
+                replayVideo.onerror = (e) => {
+                    console.error('Error playing replay video:', e);
+                    statusDisplay.textContent = "Error playing recorded video. It might be a codec issue or corrupted data. See console for details.";
+                };
+                
+                // Continue the loop if recording is still desired
+                if (recordButton.classList.contains('recording')) {
+                    setTimeout(startRecording, 100); // Restart recording after a short delay
+                } else {
+                    statusDisplay.textContent = "Recording complete. Last video is displayed below.";
                 }
-            }, RECORDING_DURATION);
+            };
+            
+            // Start recording with a timeslice of 1 second (1000ms) to ensure data chunks are available
+            mediaRecorder.start(1000); 
+            
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            livePreview.classList.add('recording');
+            recordButton.textContent = 'Start Recording';
+            recordButton.classList.add('recording');
+            statusDisplay.textContent = "Recording...";
         }
         
-        // --- UI and Animations ---
-        function animateProgress(duration) {
-            let startTime = null;
-            progressCtx.lineWidth = 5;
-            progressCtx.strokeStyle = var(--primary-color);
+        // Function to stop the entire continuous recording process
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            clearInterval(timerInterval);
             
-            function frame(timestamp) {
-                if (!startTime) startTime = timestamp;
-                const elapsed = timestamp - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                
-                drawProgress(progress);
-                
-                if (elapsed < duration) {
-                    requestAnimationFrame(frame);
-                } else {
-                    setTimeout(() => drawProgress(0), 500); // Clear after a short delay
+            releaseWakeLock();
+
+            livePreview.classList.remove('recording');
+            recordButton.textContent = 'Start Recording';
+            recordButton.classList.remove('recording');
+            statusDisplay.textContent = "Ready to record.";
+            secondsRemaining = RECORDING_DURATION; 
+            updateTimerDisplay();
+            replayVideo.classList.remove('portrait-orientation'); // Clear orientation class
+            resetReplayTransform(); // Reset replay video transform
+            replayVideo.pause(); // Ensure replay video is paused when recording stops
+            replayVideo.currentTime = 0; // Reset replay video to beginning
+        }
+        
+        // Update timer countdown
+        function updateTimer() {
+            secondsRemaining--;
+            updateTimerDisplay();
+            
+            if (secondsRemaining <= 0) {
+                clearInterval(timerInterval);
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop(); // This will trigger onstop and restart the recording loop
                 }
             }
-            requestAnimationFrame(frame);
+        }
+        
+        // Update timer display
+        function updateTimerDisplay() {
+            const seconds = secondsRemaining % 60;
+            timerDisplay.textContent = `00:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function drawProgress(progress) {
-            const centerX = progressCanvas.width / 2;
-            const centerY = progressCanvas.height / 2;
-            const radius = centerX - progressCtx.lineWidth / 2;
-            progressCtx.clearRect(0, 0, progressCanvas.width, progressCanvas.height);
-            progressCtx.beginPath();
-            progressCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI * progress);
-            progressCtx.stroke();
-        }
-
+        // --- Camera Flip Function ---
         async function flipCamera() {
-            const newFacingMode = (currentCameraFacing === 'user') ? 'environment' : 'user';
-            try {
-                await getCameraStream(newFacingMode);
-            } catch (error) {
-                statusDisplay.textContent = "Could not flip camera.";
-            }
+            currentCameraFacing = (currentCameraFacing === 'user') ? 'environment' : 'user';
+            await getCameraStream(currentCameraFacing);
         }
 
-        // --- Wake Lock ---
+        // --- Wake Lock API Functions ---
         async function requestWakeLock() {
             if ('wakeLock' in navigator) {
                 try {
-                    wakeLockSentinel = await navigator.wakeLock.request('screen');
+                    if (wakeLockSentinel === null) {
+                        wakeLockSentinel = await navigator.wakeLock.request('screen');
+                        console.log('Wake Lock is active!');
+                        wakeLockSentinel.onrelease = () => {
+                            console.log('Wake Lock was released');
+                            wakeLockSentinel = null;
+                        };
+                    } else {
+                        console.log('Wake Lock already active.');
+                    }
                 } catch (err) {
-                    console.error(`Wake Lock failed: ${err.name}, ${err.message}`);
+                    console.error(`${err.name}: ${err.message}`);
+                    if (err.name === 'NotAllowedError') {
+                        statusDisplay.textContent = "Wake Lock denied: Access to screen wake lock is disallowed. This often requires the site to be served over HTTPS and/or user permission. Please ensure your site is on HTTPS.";
+                    }
                 }
+            } else {
+                console.warn('Wake Lock API not supported by this browser.');
             }
         }
 
         async function releaseWakeLock() {
-            if (wakeLockSentinel) {
+            if (wakeLockSentinel !== null) {
                 await wakeLockSentinel.release();
                 wakeLockSentinel = null;
+                console.log('Wake Lock released!');
             }
         }
 
-        // --- Replay Video Pinch-to-Zoom and Pan ---
-        function getDistance(t1, t2) {
-            return Math.sqrt(Math.pow(t1.clientX - t2.clientX, 2) + Math.pow(t1.clientY - t2.clientY, 2));
+        // --- Replay Video Pinch Zoom and Pan Functions ---
+
+        function getDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
         }
 
-        function handleTouchStart(e) {
-            if (e.touches.length === 2) {
-                e.preventDefault();
+        function handleTouchStart(event) {
+            if (event.touches.length === 2) {
                 isPinching = true;
-                initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
-            } else if (e.touches.length === 1 && currentReplayZoom > 1) {
-                e.preventDefault();
-                lastTouchX = e.touches[0].clientX;
-                lastTouchY = e.touches[0].clientY;
+                event.preventDefault(); // Prevent default browser zoom/scroll
+                initialPinchDistance = getDistance(event.touches[0], event.touches[1]);
+                initialReplayZoom = currentReplayZoom;
+                
+                // Get the center of the pinch relative to the video area
+                const rect = replayVideoArea.getBoundingClientRect();
+                const midpointX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
+                const midpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
+                
+                // Store midpoint relative to the video's current content, considering current pan and zoom
+                // This is the point on the video content that should stay under the fingers.
+                initialMidpointXInVideo = (midpointX - rect.left - replayPanX) / currentReplayZoom;
+                initialMidpointYInVideo = (midpointY - rect.top - replayPanY) / currentReplayZoom;
+                
+            } else if (event.touches.length === 1 && currentReplayZoom > 1.0) {
+                // For single-finger pan when zoomed in
+                isPinching = false;
+                event.preventDefault(); // Prevent scroll
+                lastTouchX = event.touches[0].clientX;
+                lastTouchY = event.touches[0].clientY;
             }
         }
 
-        function handleTouchMove(e) {
-            e.preventDefault();
-            if (isPinching && e.touches.length === 2) {
-                const currentDist = getDistance(e.touches[0], e.touches[1]);
-                const zoomFactor = currentDist / initialPinchDistance;
-                currentReplayZoom = Math.max(1.0, Math.min(currentReplayZoom * zoomFactor, 4.0));
-                initialPinchDistance = currentDist; // Update for continuous zoom
-            } else if (!isPinching && e.touches.length === 1 && currentReplayZoom > 1) {
-                replayPanX += e.touches[0].clientX - lastTouchX;
-                replayPanY += e.touches[0].clientY - lastTouchY;
-                lastTouchX = e.touches[0].clientX;
-                lastTouchY = e.touches[0].clientY;
+        function handleTouchMove(event) {
+            if (isPinching && event.touches.length === 2) {
+                event.preventDefault();
+
+                const currentPinchDistance = getDistance(event.touches[0], event.touches[1]);
+                const zoomFactor = currentPinchDistance / initialPinchDistance;
+                
+                let newZoom = initialReplayZoom * zoomFactor;
+                newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+
+                // Calculate current midpoint relative to the video area
+                const rect = replayVideoArea.getBoundingClientRect();
+                const currentMidpointX = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+                const currentMidpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+
+                // Adjust pan to keep the 'initialMidpointInVideo' under the current midpoint
+                replayPanX = currentMidpointX - initialMidpointXInVideo * newZoom;
+                replayPanY = currentMidpointY - initialMidpointYInVideo * newZoom;
+
+                currentReplayZoom = newZoom;
+                updateReplayTransform();
+
+            } else if (!isPinching && event.touches.length === 1 && currentReplayZoom > 1.0) {
+                event.preventDefault();
+                const touch = event.touches[0];
+                const dx = touch.clientX - lastTouchX;
+                const dy = touch.clientY - lastTouchY;
+
+                replayPanX += dx;
+                replayPanY += dy;
+                updateReplayTransform();
+
+                lastTouchX = touch.clientX;
+                lastTouchY = touch.clientY;
             }
-            updateReplayTransform();
         }
 
-        function handleTouchEnd(e) {
+        function handleTouchEnd(event) {
             isPinching = false;
             initialPinchDistance = null;
         }
 
+        // Apply transform to replay video
         function updateReplayTransform() {
-            const videoRect = replayVideo.getBoundingClientRect();
-            const containerRect = replayVideoArea.getBoundingClientRect();
-            
-            const maxPanX = Math.max(0, (videoRect.width * currentReplayZoom - containerRect.width) / 2);
-            const maxPanY = Math.max(0, (videoRect.height * currentReplayZoom - containerRect.height) / 2);
-
-            replayPanX = Math.max(-maxPanX, Math.min(maxPanX, replayPanX));
-            replayPanY = Math.max(-maxPanY, Math.min(maxPanY, replayPanY));
-
-            let transform = `translate(${replayPanX}px, ${replayPanY}px) scale(${currentReplayZoom})`;
+            let transformString = `translate(${replayPanX}px, ${replayPanY}px) scale(${currentReplayZoom})`;
             if (replayVideo.classList.contains('portrait-orientation')) {
-                 transform += ' rotate(90deg)';
+                transformString += ' rotate(90deg)';
+                // When rotated, the canvas dimensions swap, so adjust pan for transformed state
+                // This becomes more complex with translation and rotation combined.
+                // For simplicity, we'll keep the pan relative to the unrotated coordinates
+                // and let the rotation transform the entire system.
+                // If pan looks off, more complex matrix transforms might be needed.
             }
-            replayVideo.style.transform = transform;
+            replayVideo.style.transform = transformString;
+
+            // Clamp pan values to keep video within bounds after zoom
+            clampReplayPan();
         }
 
+        function clampReplayPan() {
+            const videoRect = replayVideo.getBoundingClientRect();
+            const containerRect = replayVideoArea.getBoundingClientRect(); // Using the wrapper for bounding
+            
+            // Only clamp if zoomed in
+            if (currentReplayZoom > 1.0) {
+                const maxPanX = (videoRect.width * currentReplayZoom - containerRect.width) / 2;
+                const maxPanY = (videoRect.height * currentReplayZoom - containerRect.height) / 2;
+
+                replayPanX = Math.max(Math.min(replayPanX, maxPanX), -maxPanX);
+                replayPanY = Math.max(Math.min(replayPanY, maxPanY), -maxPanY);
+
+                // Reapply transform with clamped values
+                replayVideo.style.transform = `translate(${replayPanX}px, ${replayPanY}px) scale(${currentReplayZoom})` + (replayVideo.classList.contains('portrait-orientation') ? ' rotate(90deg)' : '');
+            } else {
+                // If not zoomed, reset pan to 0
+                if (replayPanX !== 0 || replayPanY !== 0) {
+                    replayPanX = 0;
+                    replayPanY = 0;
+                    replayVideo.style.transform = replayVideo.classList.contains('portrait-orientation') ? 'rotate(90deg)' : 'none';
+                }
+            }
+        }
+
+
+        // Reset replay video pan and zoom to initial state
         function resetReplayTransform() {
             currentReplayZoom = 1.0;
             replayPanX = 0;
             replayPanY = 0;
-            updateReplayTransform();
+            replayVideo.style.transform = replayVideo.classList.contains('portrait-orientation') ? 'rotate(90deg)' : 'none';
         }
 
         // --- Event Listeners ---
-        recordButton.addEventListener('click', startRecording);
+        recordButton.addEventListener('click', () => {
+            if (recordButton.classList.contains('recording')) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
         cameraFlipButton.addEventListener('click', flipCamera);
-        
+
+        // Add touch listeners to the replay video area for pinch-to-zoom and pan
         replayVideoArea.addEventListener('touchstart', handleTouchStart, { passive: false });
         replayVideoArea.addEventListener('touchmove', handleTouchMove, { passive: false });
         replayVideoArea.addEventListener('touchend', handleTouchEnd);
         replayVideoArea.addEventListener('touchcancel', handleTouchEnd);
-
-        // --- Start the App ---
+        
+        // Initialize the application when the page loads
         init();
     </script>
 </body>
 </html>
-
-```
