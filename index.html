@@ -91,6 +91,8 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Consistent shadow */
             background-color: #000; /* Ensure background if video not loaded */
             display: block; /* Ensure it behaves like a block element for centering */
+            /* Add touch-action to prevent default browser gestures */
+            touch-action: none;
         }
 
         video#replayVideo {
@@ -98,15 +100,15 @@
             height: auto;
             display: block;
             background-color: #000;
-            transform: scale(1); /* No zoom, but keep for consistency if needed */
-            transition: none; /* No transition for zoom */
-            transform-origin: center center;
+            transform: translate(0px, 0px) scale(1); /* Initial transform for pan/zoom */
+            transition: none; /* Transition handled by JS */
+            transform-origin: 0% 0%; /* Origin for pan/zoom is top-left of the video content */
             object-fit: contain; /* Ensure video fits within its bounds, especially after rotation */
         }
 
         /* Styles for portrait orientation of the replay video if it needs to be rotated */
         video#replayVideo.portrait-orientation {
-            /* Transform is handled by JS for rotation */
+            /* This class will be applied, but transform will be managed by JS for pan/zoom/rotate */
         }
         
         .live-indicator {
@@ -246,6 +248,7 @@
         <li>Click "Start Recording" to begin a series of 15-second recordings.</li>
         <li>The **live video preview** will appear as a small thumbnail.</li>
         <li>Each 15-second clip will automatically replace the "Last Recorded Video" below, which will be a larger view.</li>
+        <li>**Pinch to zoom** and **single-finger drag to pan** on the last recorded video.</li>
         <li>Click "Stop Recording" to end the continuous recording cycle.</li>
         <li>Click the 'Flip Camera' button to switch between front and back cameras (on mobile devices).</li>
         <li>The screen will automatically stay on while recording is active to prevent interruptions.</li>
@@ -288,6 +291,7 @@
         const livePreview = document.getElementById('livePreview');
         const statusDisplay = document.getElementById('status');
         const cameraFlipButton = document.getElementById('cameraFlipButton');
+        const replayVideoArea = document.querySelector('.replay-video-area'); // New: Get the wrapper for replay video
         
         // Global variables
         let mediaRecorder;
@@ -300,6 +304,23 @@
         let currentCameraFacing = 'user'; // 'user' for front, 'environment' for back
         let wakeLockSentinel = null; // For screen wake lock
         let lastRecordedOrientation = 'landscape'; // Stores orientation of the last recorded video
+
+        // Replay video pan/zoom state variables
+        let currentReplayZoom = 1.0;
+        let replayPanX = 0;
+        let replayPanY = 0;
+        const MAX_ZOOM = 3.0; // Increased max zoom for more detail
+        const MIN_ZOOM = 1.0; // Start at 1.0, no zoom out beyond original size
+
+        // Touch event tracking variables for replay video
+        let initialPinchDistance = null;
+        let initialReplayZoom = 1.0;
+        let initialReplayPanX = 0;
+        let initialReplayPanY = 0;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+        let isPinching = false;
+
 
         // Initialize the application: Request access to media devices
         async function init() {
@@ -430,9 +451,8 @@
                 } else {
                     replayVideo.classList.remove('portrait-orientation');
                 }
-                // Update transform without zoom, just rotation
-                replayVideo.style.transform = replayVideo.classList.contains('portrait-orientation') ? 'rotate(90deg)' : 'none';
-
+                resetReplayTransform(); // Reset pan/zoom on new video load
+                
                 replayVideo.onerror = (e) => {
                     console.error('Error playing replay video:', e);
                     statusDisplay.textContent = "Error playing recorded video. It might be a codec issue or corrupted data. See console for details.";
@@ -473,7 +493,7 @@
             secondsRemaining = RECORDING_DURATION; 
             updateTimerDisplay();
             replayVideo.classList.remove('portrait-orientation'); // Clear orientation class
-            replayVideo.style.transform = 'none'; // Reset replay video transform
+            resetReplayTransform(); // Reset replay video transform
             replayVideo.pause(); // Ensure replay video is paused when recording stops
             replayVideo.currentTime = 0; // Reset replay video to beginning
         }
@@ -535,7 +555,133 @@
                 console.log('Wake Lock released!');
             }
         }
-        
+
+        // --- Replay Video Pinch Zoom and Pan Functions ---
+
+        function getDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function handleTouchStart(event) {
+            if (event.touches.length === 2) {
+                isPinching = true;
+                event.preventDefault(); // Prevent default browser zoom/scroll
+                initialPinchDistance = getDistance(event.touches[0], event.touches[1]);
+                initialReplayZoom = currentReplayZoom;
+                
+                // Get the center of the pinch relative to the video area
+                const rect = replayVideoArea.getBoundingClientRect();
+                const midpointX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
+                const midpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
+                
+                // Store midpoint relative to the video's current content, considering current pan and zoom
+                // This is the point on the video content that should stay under the fingers.
+                initialMidpointXInVideo = (midpointX - rect.left - replayPanX) / currentReplayZoom;
+                initialMidpointYInVideo = (midpointY - rect.top - replayPanY) / currentReplayZoom;
+                
+            } else if (event.touches.length === 1 && currentReplayZoom > 1.0) {
+                // For single-finger pan when zoomed in
+                isPinching = false;
+                event.preventDefault(); // Prevent scroll
+                lastTouchX = event.touches[0].clientX;
+                lastTouchY = event.touches[0].clientY;
+            }
+        }
+
+        function handleTouchMove(event) {
+            if (isPinching && event.touches.length === 2) {
+                event.preventDefault();
+
+                const currentPinchDistance = getDistance(event.touches[0], event.touches[1]);
+                const zoomFactor = currentPinchDistance / initialPinchDistance;
+                
+                let newZoom = initialReplayZoom * zoomFactor;
+                newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+
+                // Calculate current midpoint relative to the video area
+                const rect = replayVideoArea.getBoundingClientRect();
+                const currentMidpointX = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+                const currentMidpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+
+                // Adjust pan to keep the 'initialMidpointInVideo' under the current midpoint
+                replayPanX = currentMidpointX - initialMidpointXInVideo * newZoom;
+                replayPanY = currentMidpointY - initialMidpointYInVideo * newZoom;
+
+                currentReplayZoom = newZoom;
+                updateReplayTransform();
+
+            } else if (!isPinching && event.touches.length === 1 && currentReplayZoom > 1.0) {
+                event.preventDefault();
+                const touch = event.touches[0];
+                const dx = touch.clientX - lastTouchX;
+                const dy = touch.clientY - lastTouchY;
+
+                replayPanX += dx;
+                replayPanY += dy;
+                updateReplayTransform();
+
+                lastTouchX = touch.clientX;
+                lastTouchY = touch.clientY;
+            }
+        }
+
+        function handleTouchEnd(event) {
+            isPinching = false;
+            initialPinchDistance = null;
+        }
+
+        // Apply transform to replay video
+        function updateReplayTransform() {
+            let transformString = `translate(${replayPanX}px, ${replayPanY}px) scale(${currentReplayZoom})`;
+            if (replayVideo.classList.contains('portrait-orientation')) {
+                transformString += ' rotate(90deg)';
+                // When rotated, the canvas dimensions swap, so adjust pan for transformed state
+                // This becomes more complex with translation and rotation combined.
+                // For simplicity, we'll keep the pan relative to the unrotated coordinates
+                // and let the rotation transform the entire system.
+                // If pan looks off, more complex matrix transforms might be needed.
+            }
+            replayVideo.style.transform = transformString;
+
+            // Clamp pan values to keep video within bounds after zoom
+            clampReplayPan();
+        }
+
+        function clampReplayPan() {
+            const videoRect = replayVideo.getBoundingClientRect();
+            const containerRect = replayVideoArea.getBoundingClientRect(); // Using the wrapper for bounding
+            
+            // Only clamp if zoomed in
+            if (currentReplayZoom > 1.0) {
+                const maxPanX = (videoRect.width * currentReplayZoom - containerRect.width) / 2;
+                const maxPanY = (videoRect.height * currentReplayZoom - containerRect.height) / 2;
+
+                replayPanX = Math.max(Math.min(replayPanX, maxPanX), -maxPanX);
+                replayPanY = Math.max(Math.min(replayPanY, maxPanY), -maxPanY);
+
+                // Reapply transform with clamped values
+                updateReplayTransform(); // This might cause a slight jump if pan was out of bounds
+            } else {
+                // If not zoomed, reset pan to 0
+                if (replayPanX !== 0 || replayPanY !== 0) {
+                    replayPanX = 0;
+                    replayPanY = 0;
+                    updateReplayTransform();
+                }
+            }
+        }
+
+
+        // Reset replay video pan and zoom to initial state
+        function resetReplayTransform() {
+            currentReplayZoom = 1.0;
+            replayPanX = 0;
+            replayPanY = 0;
+            replayVideo.style.transform = replayVideo.classList.contains('portrait-orientation') ? 'rotate(90deg)' : 'none';
+        }
+
         // --- Event Listeners ---
         recordButton.addEventListener('click', () => {
             if (recordButton.classList.contains('recording')) {
@@ -547,13 +693,11 @@
 
         cameraFlipButton.addEventListener('click', flipCamera);
 
-        // REMOVED: Auto-stop recording when replay video is played
-        // replayVideo.addEventListener('play', () => {
-        //     if (recordButton.classList.contains('recording')) {
-        //         console.log('Replay video started playing, stopping current recording.');
-        //         stopRecording();
-        //     }
-        // });
+        // Add touch listeners to the replay video area for pinch-to-zoom and pan
+        replayVideoArea.addEventListener('touchstart', handleTouchStart, { passive: false });
+        replayVideoArea.addEventListener('touchmove', handleTouchMove, { passive: false });
+        replayVideoArea.addEventListener('touchend', handleTouchEnd);
+        replayVideoArea.addEventListener('touchcancel', handleTouchEnd);
         
         // Initialize the application when the page loads
         init();
