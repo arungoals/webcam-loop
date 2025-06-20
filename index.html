@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>30-Second Looping Webcam Recorder</title>
+    <title>Mobile-Optimized Webcam Recorder with Zoom</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 90%; /* Increased max-width for better mobile use */
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px; /* Reduced padding for mobile */
             background-color: #f5f7fa;
             color: #333;
         }
@@ -17,13 +17,23 @@
         h1 {
             text-align: center;
             color: #2c3e50;
-            margin-bottom: 30px;
+            margin-bottom: 20px; /* Adjusted margin */
+            font-size: 1.8em; /* Responsive font size */
         }
         
         .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex; /* Use flexbox for better mobile stacking */
+            flex-direction: column; /* Stack vertically by default */
             gap: 20px;
+        }
+
+        /* Media query for larger screens (e.g., tablets and desktops) */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row; /* Two columns on larger screens */
+                display: grid; /* Switch to grid for fixed columns */
+                grid-template-columns: 1fr 1fr;
+            }
         }
         
         .video-container {
@@ -32,10 +42,22 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            flex-grow: 1; /* Allows video container to grow in flex layout */
         }
         
-        video {
+        video#liveVideo { /* Specific selector for live video for zoom */
             width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            display: block;
+            background-color: #000;
+            transform: scale(1); /* Initial scale for zoom */
+            transition: transform 0.1s ease-out; /* Smooth zoom transition */
+            transform-origin: center center; /* Zoom from the center */
+        }
+
+        video#replayVideo {
+            width: 100%;
+            height: auto;
             display: block;
             background-color: #000;
         }
@@ -51,6 +73,7 @@
             font-size: 12px;
             font-weight: bold;
             display: none;
+            z-index: 10; /* Ensure indicator is above video */
         }
         
         .recording .live-indicator {
@@ -66,6 +89,62 @@
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 14px;
+            z-index: 10; /* Ensure timer is above video */
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 5px;
+        }
+
+        .zoom-button {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .zoom-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .zoom-button:disabled {
+            background-color: rgba(0, 0, 0, 0.3);
+            cursor: not-allowed;
+        }
+        
+        .controls-and-instructions {
+            display: flex;
+            flex-direction: column; /* Stack controls and instructions */
+            gap: 20px; /* Space between sections */
+        }
+
+        /* Order adjustment for mobile and desktop */
+        .video-container {
+            order: 1; /* Video first on mobile */
+        }
+        .controls-and-instructions {
+            order: 2; /* Controls and instructions second on mobile */
+        }
+        @media (min-width: 768px) {
+            .video-container {
+                order: 0; /* Default order on desktop */
+            }
+            .controls-and-instructions {
+                order: 0; /* Default order on desktop */
+            }
         }
         
         .controls {
@@ -84,6 +163,8 @@
             cursor: pointer;
             font-weight: 600;
             transition: background-color 0.2s;
+            flex-grow: 1; /* Allow button to grow in flex container */
+            max-width: 200px; /* Limit button width */
         }
         
         button:hover {
@@ -109,6 +190,16 @@
             margin-bottom: 8px;
             color: #2c3e50;
         }
+
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
         
         .replay-section {
             margin-top: 30px;
@@ -132,22 +223,28 @@
         <div class="video-container" id="livePreview">
             <div class="live-indicator">LIVE</div>
             <video id="liveVideo" autoplay muted playsinline></video>
-            <div class="timer" id="timerDisplay">00:30</div> <!-- Re-added timer display -->
+            <div class="timer" id="timerDisplay">00:30</div>
+            <div class="zoom-controls">
+                <button id="zoomOutButton" class="zoom-button">-</button>
+                <button id="zoomInButton" class="zoom-button">+</button>
+            </div>
         </div>
         
-        <div>
-            <div class="section-title">Controls</div>
+        <div class="controls-and-instructions">
             <div class="controls">
                 <button id="recordButton">Start Recording</button>
             </div>
             <div class="status" id="status">Ready to record</div>
             
-            <div class="section-title">Instructions</div>
-            <ul>
-                <li>Click "Start Recording" to begin a series of 30-second recordings.</li>
-                <li>Each 30-second clip will automatically replace the "Last Recorded Video" below.</li>
-                <li>Click "Stop Recording" to end the continuous recording cycle.</li>
-            </ul>
+            <div>
+                <div class="section-title">Instructions</div>
+                <ul>
+                    <li>Click "Start Recording" to begin a series of 30-second recordings.</li>
+                    <li>Each 30-second clip will automatically replace the "Last Recorded Video" below.</li>
+                    <li>Click "Stop Recording" to end the continuous recording cycle.</li>
+                    <li>Use the '+' and '-' buttons to zoom the live video feed.</li>
+                </ul>
+            </div>
         </div>
     </div>
     
@@ -161,17 +258,24 @@
         const liveVideo = document.getElementById('liveVideo');
         const replayVideo = document.getElementById('replayVideo');
         const recordButton = document.getElementById('recordButton');
-        const timerDisplay = document.getElementById('timerDisplay'); // Re-added
+        const timerDisplay = document.getElementById('timerDisplay');
         const livePreview = document.getElementById('livePreview');
         const statusDisplay = document.getElementById('status');
+        const zoomInButton = document.getElementById('zoomInButton');
+        const zoomOutButton = document.getElementById('zoomOutButton');
         
         // Global variables
         let mediaRecorder;
         let recordedChunks = [];
         let timerInterval;
-        let secondsRemaining = 30; // Reset to 30 seconds
+        let secondsRemaining = 30;
         let mediaStream; // Stores the active media stream from webcam/mic
-        
+        let supportedMimeType = 'video/webm'; // Default MIME type
+        let currentZoom = 1.0; // Initial zoom level
+        const ZOOM_STEP = 0.1; // Amount to change zoom by
+        const MAX_ZOOM = 2.0; // Maximum zoom level
+        const MIN_ZOOM = 0.5; // Minimum zoom level
+
         // Initialize the application: Request access to media devices
         async function init() {
             try {
@@ -184,6 +288,21 @@
                 // Display live video feed in the live preview section
                 liveVideo.srcObject = mediaStream;
                 statusDisplay.textContent = "Camera ready. Click 'Start Recording' to begin.";
+
+                // Determine the best supported MIME type for MediaRecorder
+                if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
+                    supportedMimeType = 'video/webm; codecs=vp9';
+                } else if (MediaRecorder.isTypeSupported('video/webm; codecs=vp8')) {
+                    supportedMimeType = 'video/webm; codecs=vp8';
+                } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                    supportedMimeType = 'video/webm';
+                } else {
+                    console.warn('No webm video recording supported. Fallback to default.');
+                    statusDisplay.textContent = "Your browser may not fully support video recording.";
+                    recordButton.disabled = true; // Disable if no suitable type found
+                }
+                console.log('Using MIME type for MediaRecorder:', supportedMimeType);
+
             } catch (error) {
                 // Handle errors if media access is denied or unavailable
                 console.error('Error accessing media devices:', error);
@@ -208,9 +327,12 @@
             
             // Clear any existing timer interval to prevent multiple timers running
             clearInterval(timerInterval);
+
+            // Reset zoom to default when recording starts
+            resetZoom();
             
-            // Create a new MediaRecorder instance with the media stream
-            mediaRecorder = new MediaRecorder(mediaStream);
+            // Create a new MediaRecorder instance with the media stream and determined MIME type
+            mediaRecorder = new MediaRecorder(mediaStream, { mimeType: supportedMimeType });
             
             // Event listener for when data is available from the recorder
             mediaRecorder.ondataavailable = (event) => {
@@ -221,14 +343,25 @@
             
             // Event listener for when the recording stops
             mediaRecorder.onstop = () => {
-                // Create a Blob from all collected recorded chunks
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                // Create a Blob from all collected recorded chunks, using the determined MIME type
+                const blob = new Blob(recordedChunks, { type: supportedMimeType });
                 // Create a URL for the Blob to be used as a video source
                 const videoUrl = URL.createObjectURL(blob);
                 
+                console.log('Recorded Blob:', blob);
+                console.log('Video URL created:', videoUrl);
+
                 // Set the source of the replay video element to the new 30-second clip
                 replayVideo.src = videoUrl;
                 replayVideo.style.display = 'block'; // Ensure the replay video player is visible
+                replayVideo.load(); // Reload the video element to ensure playback
+                replayVideo.play().catch(e => console.error("Error attempting to play replay video:", e)); // Attempt to auto-play
+
+                // Add an error listener for the replay video to catch playback issues
+                replayVideo.onerror = (e) => {
+                    console.error('Error playing replay video:', e);
+                    statusDisplay.textContent = "Error playing recorded video. It might be a codec issue or corrupted data.";
+                };
                 
                 // Check if the recording should continue (i.e., if the user hasn't manually stopped it)
                 if (recordButton.classList.contains('recording')) {
@@ -269,6 +402,7 @@
             statusDisplay.textContent = "Ready to record.";
             secondsRemaining = 30; // Reset timer display for next start
             updateTimerDisplay();
+            resetZoom(); // Reset zoom when recording stops
         }
         
         // Function to update the countdown timer
@@ -292,6 +426,37 @@
             // Format to "MM:SS" (here, always "00:SS")
             timerDisplay.textContent = `00:${seconds.toString().padStart(2, '0')}`;
         }
+
+        // Function to handle zoom in
+        function zoomIn() {
+            if (currentZoom < MAX_ZOOM) {
+                currentZoom += ZOOM_STEP;
+                liveVideo.style.transform = `scale(${currentZoom})`;
+                updateZoomButtonsState();
+            }
+        }
+
+        // Function to handle zoom out
+        function zoomOut() {
+            if (currentZoom > MIN_ZOOM) {
+                currentZoom -= ZOOM_STEP;
+                liveVideo.style.transform = `scale(${currentZoom})`;
+                updateZoomButtonsState();
+            }
+        }
+
+        // Function to reset zoom to default
+        function resetZoom() {
+            currentZoom = 1.0;
+            liveVideo.style.transform = `scale(${currentZoom})`;
+            updateZoomButtonsState();
+        }
+
+        // Function to update the disabled state of zoom buttons
+        function updateZoomButtonsState() {
+            zoomInButton.disabled = currentZoom >= MAX_ZOOM;
+            zoomOutButton.disabled = currentZoom <= MIN_ZOOM;
+        }
         
         // Event listener for the record/stop button
         recordButton.addEventListener('click', () => {
@@ -302,6 +467,10 @@
                 startRecording();
             }
         });
+
+        // Event listeners for zoom buttons
+        zoomInButton.addEventListener('click', zoomIn);
+        zoomOutButton.addEventListener('click', zoomOut);
         
         // Initialize the application when the page loads
         init();
