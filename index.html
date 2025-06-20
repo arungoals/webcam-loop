@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30-Second Looping Webcam Recorder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .video-container {
+            position: relative;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        video {
+            width: 100%;
+            display: block;
+            background-color: #000;
+        }
+        
+        .live-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .recording .live-indicator {
+            display: block;
+        }
+        
+        .timer {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        button.recording {
+            background-color: #e74c3c;
+        }
+        
+        button.recording:hover {
+            background-color: #c0392b;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .replay-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+            color: #7f8c8d;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>30-Second Looping Webcam Recorder</h1>
+    
+    <div class="container">
+        <div class="video-container" id="livePreview">
+            <div class="live-indicator">LIVE</div>
+            <video id="liveVideo" autoplay muted playsinline></video>
+            <div class="timer" id="timerDisplay">00:30</div> <!-- Re-added timer display -->
+        </div>
+        
+        <div>
+            <div class="section-title">Controls</div>
+            <div class="controls">
+                <button id="recordButton">Start Recording</button>
+            </div>
+            <div class="status" id="status">Ready to record</div>
+            
+            <div class="section-title">Instructions</div>
+            <ul>
+                <li>Click "Start Recording" to begin a series of 30-second recordings.</li>
+                <li>Each 30-second clip will automatically replace the "Last Recorded Video" below.</li>
+                <li>Click "Stop Recording" to end the continuous recording cycle.</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="replay-section">
+        <div class="section-title">Last Recorded Video</div>
+        <video id="replayVideo" controls loop playsinline></video>
+    </div>
+
+    <script>
+        // DOM elements
+        const liveVideo = document.getElementById('liveVideo');
+        const replayVideo = document.getElementById('replayVideo');
+        const recordButton = document.getElementById('recordButton');
+        const timerDisplay = document.getElementById('timerDisplay'); // Re-added
+        const livePreview = document.getElementById('livePreview');
+        const statusDisplay = document.getElementById('status');
+        
+        // Global variables
+        let mediaRecorder;
+        let recordedChunks = [];
+        let timerInterval;
+        let secondsRemaining = 30; // Reset to 30 seconds
+        let mediaStream; // Stores the active media stream from webcam/mic
+        
+        // Initialize the application: Request access to media devices
+        async function init() {
+            try {
+                // Request camera and microphone access
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                // Display live video feed in the live preview section
+                liveVideo.srcObject = mediaStream;
+                statusDisplay.textContent = "Camera ready. Click 'Start Recording' to begin.";
+            } catch (error) {
+                // Handle errors if media access is denied or unavailable
+                console.error('Error accessing media devices:', error);
+                statusDisplay.textContent = "Error accessing camera/microphone. Please check permissions.";
+                recordButton.disabled = true; // Disable the record button if camera/mic cannot be accessed
+            }
+        }
+        
+        // Function to start a 30-second recording segment
+        function startRecording() {
+            // Ensure media stream is available
+            if (!mediaStream) {
+                statusDisplay.textContent = "Error: Camera/Microphone not available.";
+                return;
+            }
+            
+            // Clear any previously recorded data for the new segment
+            recordedChunks = [];
+            // Reset the timer for the new 30-second segment
+            secondsRemaining = 30;
+            updateTimerDisplay(); // Update the displayed timer immediately
+            
+            // Clear any existing timer interval to prevent multiple timers running
+            clearInterval(timerInterval);
+            
+            // Create a new MediaRecorder instance with the media stream
+            mediaRecorder = new MediaRecorder(mediaStream);
+            
+            // Event listener for when data is available from the recorder
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data); // Add the data chunk to our array
+                }
+            };
+            
+            // Event listener for when the recording stops
+            mediaRecorder.onstop = () => {
+                // Create a Blob from all collected recorded chunks
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                // Create a URL for the Blob to be used as a video source
+                const videoUrl = URL.createObjectURL(blob);
+                
+                // Set the source of the replay video element to the new 30-second clip
+                replayVideo.src = videoUrl;
+                replayVideo.style.display = 'block'; // Ensure the replay video player is visible
+                
+                // Check if the recording should continue (i.e., if the user hasn't manually stopped it)
+                if (recordButton.classList.contains('recording')) {
+                    // Start a new 30-second segment after a short delay
+                    setTimeout(startRecording, 100); 
+                } else {
+                    // If manually stopped, update status and clear button state
+                    statusDisplay.textContent = "Recording complete. Last video is displayed below.";
+                }
+            };
+            
+            // Start the media recorder
+            mediaRecorder.start();
+            
+            // Start the countdown timer for this segment
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Update UI to reflect that recording is active
+            livePreview.classList.add('recording');
+            recordButton.textContent = 'Stop Recording'; // Change button text
+            recordButton.classList.add('recording'); // Add class for recording style
+            statusDisplay.textContent = "Recording...";
+        }
+        
+        // Function to stop the entire continuous recording process
+        function stopRecording() {
+            // Stop the current MediaRecorder if it's active
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            // Clear the timer interval
+            clearInterval(timerInterval);
+            
+            // Reset UI elements to the initial state
+            livePreview.classList.remove('recording');
+            recordButton.textContent = 'Start Recording';
+            recordButton.classList.remove('recording');
+            statusDisplay.textContent = "Ready to record.";
+            secondsRemaining = 30; // Reset timer display for next start
+            updateTimerDisplay();
+        }
+        
+        // Function to update the countdown timer
+        function updateTimer() {
+            secondsRemaining--; // Decrement seconds
+            updateTimerDisplay(); // Update the display
+            
+            // If the timer reaches zero, stop the current segment (this will trigger onstop and then restart)
+            if (secondsRemaining <= 0) {
+                clearInterval(timerInterval); // Stop the current timer
+                // MediaRecorder.stop() will trigger mediaRecorder.onstop, which handles the next segment start.
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+            }
+        }
+        
+        // Function to format and update the timer display
+        function updateTimerDisplay() {
+            const seconds = secondsRemaining % 60;
+            // Format to "MM:SS" (here, always "00:SS")
+            timerDisplay.textContent = `00:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Event listener for the record/stop button
+        recordButton.addEventListener('click', () => {
+            // Toggle between starting and stopping the entire recording session
+            if (recordButton.classList.contains('recording')) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+        
+        // Initialize the application when the page loads
+        init();
+    </script>
+</body>
+</html>
