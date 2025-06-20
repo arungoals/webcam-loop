@@ -141,47 +141,64 @@
         }
 
         /* Zoom controls for live video (inside video-container) */
-        .zoom-controls {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            z-index: 10;
-            display: flex;
-            gap: 5px;
-        }
+        /* REMOVED .zoom-controls for live video */
 
         /* Zoom controls for replay video (inside replay-video-area) */
         .replay-zoom-controls {
             position: absolute;
             bottom: 10px;
-            right: 10px;
+            left: 50%; /* Center the slider */
+            transform: translateX(-50%); /* Adjust for centering */
             z-index: 10;
             display: flex;
-            gap: 5px;
-        }
-
-        .zoom-button {
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
+            gap: 10px; /* Space between slider and label */
+            background-color: rgba(0, 0, 0, 0.7); /* Background for slider area */
+            padding: 8px 12px;
             border-radius: 4px;
-            width: 30px;
-            height: 30px;
-            font-size: 1.2em;
-            cursor: pointer;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s;
         }
 
-        .zoom-button:hover {
-            background-color: rgba(0, 0, 0, 0.9);
+        .replay-zoom-controls input[type="range"] {
+            width: 150px; /* Width of the slider */
+            -webkit-appearance: none; /* Remove default styling for Chrome/Safari */
+            appearance: none;
+            height: 8px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 4px;
         }
 
-        .zoom-button:disabled {
-            background-color: rgba(0, 0, 0, 0.3);
-            cursor: not-allowed;
+        .replay-zoom-controls input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        .replay-zoom-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+
+        .replay-zoom-controls input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+
+        .replay-zoom-controls label {
+            color: white;
+            font-size: 14px;
+            white-space: nowrap; /* Prevent text wrapping */
         }
         
         .controls-and-instructions {
@@ -285,15 +302,15 @@
 
     <div class="section-title">Instructions</div>
     <ul>
+        <li>**Important:** For best experience on mobile, please use the app in **horizontal (landscape)** orientation.</li>
         <li>Click "Start Recording" to begin a series of 30-second recordings.</li>
         <li>The **live video preview** will appear as a small thumbnail.</li>
         <li>Each 30-second clip will automatically replace the "Last Recorded Video" below, which will be a larger view.</li>
         <li>Click "Stop Recording" to end the continuous recording cycle.</li>
-        <li>Use the '+' and '-' buttons to zoom the **live video thumbnail** feed.</li>
         <li>Click the 'Flip Camera' button to switch between front and back cameras (on mobile devices).</li>
-        <li>Use the '+' and '-' buttons below the recorded video to zoom in/out on the **last recorded video**.</li>
+        <li>Use the **zoom slider** below the recorded video to zoom in/out on the **last recorded video**.</li>
         <li>Playing the "Last Recorded Video" will automatically stop any ongoing recording.</li>
-        <li>**Important:** The screen will automatically stay on while recording is active to prevent interruptions.</li>
+        <li>The screen will automatically stay on while recording is active to prevent interruptions.</li>
     </ul>
     <div class="scroll-down-message">
         Scroll down to use the app functionality!
@@ -304,10 +321,7 @@
             <div class="live-indicator">LIVE</div>
             <video id="liveVideo" autoplay muted playsinline></video>
             <div class="timer" id="timerDisplay">00:30</div>
-            <div class="zoom-controls">
-                <button id="zoomOutButton" class="zoom-button">-</button>
-                <button id="zoomInButton" class="zoom-button">+</button>
-            </div>
+            <!-- Removed zoom-controls for live video -->
         </div>
         
         <div class="controls-and-instructions">
@@ -325,8 +339,8 @@
         <div class="replay-video-area"> <!-- NEW WRAPPER -->
             <video id="replayVideo" controls loop playsinline></video>
             <div class="replay-zoom-controls">
-                <button id="replayZoomOutButton" class="zoom-button">-</button>
-                <button id="replayZoomInButton" class="zoom-button">+</button>
+                <label for="replayZoomSlider">Zoom:</label>
+                <input type="range" id="replayZoomSlider" min="50" max="200" value="100">
             </div>
         </div>
     </div>
@@ -339,11 +353,9 @@
         const timerDisplay = document.getElementById('timerDisplay');
         const livePreview = document.getElementById('livePreview');
         const statusDisplay = document.getElementById('status');
-        const zoomInButton = document.getElementById('zoomInButton');
-        const zoomOutButton = document.getElementById('zoomOutButton');
+        // Removed zoomInButton and zoomOutButton for live video
         const cameraFlipButton = document.getElementById('cameraFlipButton');
-        const replayZoomInButton = document.getElementById('replayZoomInButton');
-        const replayZoomOutButton = document.getElementById('replayZoomOutButton');
+        const replayZoomSlider = document.getElementById('replayZoomSlider'); // New slider element
         
         // Global variables
         let mediaRecorder;
@@ -352,9 +364,7 @@
         let secondsRemaining = 30;
         let mediaStream; // Stores the active media stream from webcam/mic
         let supportedMimeType = 'video/mp4'; // Default MIME type, will be determined at init
-        let currentLiveZoom = 1.0; // Initial zoom level for live video
         let currentReplayZoom = 1.0; // Initial zoom level for replay video
-        const ZOOM_STEP = 0.1; // Amount to change zoom by
         const MAX_ZOOM = 2.0; // Maximum zoom level
         const MIN_ZOOM = 0.5; // Minimum zoom level
         let currentCameraFacing = 'user'; // 'user' for front, 'environment' for back
@@ -394,6 +404,9 @@
                      }
                 }
                 console.log('Using MIME type for MediaRecorder:', supportedMimeType);
+
+                // Set initial slider value
+                replayZoomSlider.value = currentReplayZoom * 100;
 
             } catch (error) {
                 // Handle errors if media access is denied or unavailable
@@ -448,7 +461,7 @@
             clearInterval(timerInterval);
 
             // Reset zoom to default when recording starts
-            resetLiveZoom();
+            // Removed resetLiveZoom();
             resetReplayZoom(); // Also reset replay zoom
 
             // Determine and store the orientation of the live stream at the start of recording
@@ -565,7 +578,7 @@
             statusDisplay.textContent = "Ready to record.";
             secondsRemaining = 30; // Reset timer display for next start
             updateTimerDisplay();
-            resetLiveZoom(); // Reset live zoom when recording stops
+            // Removed resetLiveZoom();
             resetReplayZoom(); // Reset replay zoom when recording stops
             replayVideo.classList.remove('portrait-orientation'); // Clear orientation class
         }
@@ -592,60 +605,26 @@
             timerDisplay.textContent = `00:${seconds.toString().padStart(2, '0')}`;
         }
 
-        // --- Live Video Zoom Functions ---
-        function zoomInLive() {
-            if (currentLiveZoom < MAX_ZOOM) {
-                currentLiveZoom += ZOOM_STEP;
-                liveVideo.style.transform = `scale(${currentLiveZoom})`;
-                updateLiveZoomButtonsState();
-            }
-        }
+        // --- Live Video Zoom Functions (NO BUTTONS) ---
+        // Retained for potential future use or if mobile browser zoom is still desired via JS
+        // Not hooked up to buttons anymore
+        function zoomInLive() { /* functionality removed from buttons */ }
+        function zoomOutLive() { /* functionality removed from buttons */ }
+        function resetLiveZoom() { /* functionality removed from buttons */ }
+        function updateLiveZoomButtonsState() { /* functionality removed from buttons */ }
 
-        function zoomOutLive() {
-            if (currentLiveZoom > MIN_ZOOM) {
-                currentLiveZoom -= ZOOM_STEP;
-                liveVideo.style.transform = `scale(${currentLiveZoom})`;
-                updateLiveZoomButtonsState();
-            }
-        }
 
-        function resetLiveZoom() {
-            currentLiveZoom = 1.0;
-            liveVideo.style.transform = `scale(${currentLiveZoom})`;
-            updateLiveZoomButtonsState();
-        }
-
-        function updateLiveZoomButtonsState() {
-            zoomInButton.disabled = currentLiveZoom >= MAX_ZOOM;
-            zoomOutButton.disabled = currentLiveZoom <= MIN_ZOOM;
-        }
-
-        // --- Replay Video Zoom Functions ---
-        function zoomInReplay() {
-            if (currentReplayZoom < MAX_ZOOM) {
-                currentReplayZoom += ZOOM_STEP;
-                updateReplayVideoTransform(); // Call combined transform function
-                updateReplayZoomButtonsState();
-            }
-        }
-
-        function zoomOutReplay() {
-            if (currentReplayZoom > MIN_ZOOM) {
-                currentReplayZoom -= ZOOM_STEP;
-                updateReplayVideoTransform(); // Call combined transform function
-                updateReplayZoomButtonsState();
-            }
+        // --- Replay Video Zoom Functions (with Slider) ---
+        function updateReplayZoomFromSlider() {
+            // Convert slider value (50-200) to zoom scale (0.5-2.0)
+            currentReplayZoom = replayZoomSlider.value / 100;
+            updateReplayVideoTransform(); // Apply combined transform function
         }
 
         function resetReplayZoom() {
             currentReplayZoom = 1.0;
-            updateReplayVideoTransform(); // Call combined transform function
-            updateReplayZoomButtonsState();
-        }
-
-        function updateReplayZoomButtonsState() {
-            replayZoomInButton.disabled = currentReplayZoom >= MAX_ZOOM;
-            replayZoomOutButton.disabled = currentReplayZoom <= MIN_ZOOM;
+            replayZoomSlider.value = 100; // Reset slider to center (1.0x)
+            updateReplayVideoTransform(); // Apply combined transform function
         }
 
         // Function to update replay video transform including scale and rotation
@@ -656,10 +635,6 @@
             // This logic assumes `lastRecordedOrientation` is correctly set based on the original capture.
             if (replayVideo.classList.contains('portrait-orientation')) {
                 transformString += ' rotate(90deg)'; 
-                // To keep the rotated video centered and fill the area,
-                // we might need to adjust translate properties, but object-fit: contain helps.
-                // For a more precise fit, especially with zoom, one might also adjust scale based on
-                // videoWidth/videoHeight after rotation, but for simplicity, we rely on object-fit.
             }
             replayVideo.style.transform = transformString;
         }
@@ -705,12 +680,11 @@
             }
         });
 
-        zoomInButton.addEventListener('click', zoomInLive);
-        zoomOutButton.addEventListener('click', zoomOutLive);
+        // Removed event listeners for live video zoom buttons
         cameraFlipButton.addEventListener('click', flipCamera);
 
-        replayZoomInButton.addEventListener('click', zoomInReplay);
-        replayZoomOutButton.addEventListener('click', zoomOutReplay);
+        // Event listener for replay zoom slider
+        replayZoomSlider.addEventListener('input', updateReplayZoomFromSlider);
 
         // Auto-stop recording when replay video is played
         replayVideo.addEventListener('play', () => {
