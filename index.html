@@ -94,22 +94,24 @@
             display: block; /* Ensure it behaves like a block element for centering */
             /* Add touch-action to prevent default browser gestures */
             touch-action: none;
+            aspect-ratio: 16 / 9; /* Ensure replay area is widescreen */
         }
 
         video#replayVideo {
             width: 100%; /* Now 100% of .replay-video-area */
-            height: auto;
+            height: 100%; /* Fill the height of the container */
             display: block;
             background-color: #000;
             transform: translate(0px, 0px) scale(1); /* Initial transform for pan/zoom */
             transition: none; /* Transition handled by JS */
             transform-origin: 0% 0%; /* Origin for pan/zoom is top-left of the video content */
-            object-fit: contain; /* Ensure video fits within its bounds, especially after rotation */
+            object-fit: cover; /* Ensures video covers area, may crop */
         }
 
         /* Styles for portrait orientation of the replay video if it needs to be rotated */
         video#replayVideo.portrait-orientation {
-            /* This class will be applied, but transform will be managed by JS for pan/zoom/rotate */
+            /* JS will handle transform for pan/zoom/rotate */
+            object-fit: cover; /* Changed to cover to fill the wide area, cropping if needed */
         }
         
         .live-indicator {
@@ -362,7 +364,11 @@
             try {
                 // Request media stream with the specified facing mode
                 mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: facingMode },
+                    video: { 
+                        facingMode: facingMode,
+                        width: { ideal: 1280 }, // Request 16:9 width
+                        height: { ideal: 720 }  // Request 16:9 height
+                    },
                     audio: true
                 });
                 liveVideo.srcObject = mediaStream; // Assign stream to live video element
@@ -448,7 +454,7 @@
                 };
                 
                 // Continue the loop if recording is still desired
-                if (recordButton.classList.contains('recording')) {
+                if (recordButton.classList.contains('recording')) { // This checks for 'recording' class
                     setTimeout(startRecording, 100); // Restart recording after a short delay
                 } else {
                     statusDisplay.textContent = "Recording complete. Last video is displayed below.";
@@ -461,7 +467,7 @@
             timerInterval = setInterval(updateTimer, 1000);
             
             livePreview.classList.add('recording');
-            recordButton.textContent = 'Start Recording';
+            recordButton.textContent = 'Stop Recording'; // Correctly set to Stop Recording
             recordButton.classList.add('recording');
             statusDisplay.textContent = "Recording...";
         }
@@ -476,7 +482,7 @@
             releaseWakeLock();
 
             livePreview.classList.remove('recording');
-            recordButton.textContent = 'Start Recording';
+            recordButton.textContent = 'Start Recording'; // Correctly set to Start Recording
             recordButton.classList.remove('recording');
             statusDisplay.textContent = "Ready to record.";
             secondsRemaining = RECORDING_DURATION; 
@@ -529,7 +535,7 @@
                 } catch (err) {
                     console.error(`${err.name}: ${err.message}`);
                     if (err.name === 'NotAllowedError') {
-                        statusDisplay.textContent = "Wake Lock denied: Access to screen wake lock is disallowed. This often requires the site to be served over HTTPS and/or user permission. Please ensure your site is on HTTPS.";
+                        statusDisplay.textContent = "Wake Lock denied: Access to screen wake lock is disallowed by permissions policy. This often requires the site to be served over HTTPS and/or user permission. Please ensure your site is on HTTPS.";
                     }
                 }
             } else {
