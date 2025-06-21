@@ -10,7 +10,7 @@
             font-family: 'Inter', sans-serif; /* Using Inter for a modern look */
             max-width: 98%; /* Slightly wider for better mobile space usage */
             margin: 0 auto;
-            padding: 10px; /* Reduced padding for more compactness */
+            padding: 8px; /* Reduced padding for more compactness */
             background: linear-gradient(135deg, #1a1a2e 0%, #2c2c4a 100%); /* Subtle dark gradient */
             color: #e0e0e0; /* Light text color */
             min-height: 100vh; /* Ensure body takes full height */
@@ -22,8 +22,8 @@
         h1 {
             text-align: center;
             color: #ffffff; /* White heading */
-            margin-bottom: 20px; /* Adjusted margin */
-            font-size: 1.6em; /* Slightly smaller, responsive font size */
+            margin-bottom: 15px; /* Adjusted margin */
+            font-size: 1.5em; /* Slightly smaller, responsive font size */
             font-weight: 700; /* Bolder heading */
             letter-spacing: 0.05em; /* A bit of letter spacing */
         }
@@ -31,14 +31,14 @@
         /* Orientation Message */
         .orientation-message {
             text-align: center;
-            margin-bottom: 20px; /* More space below message */
-            padding: 8px 12px; /* Reduced padding */
+            margin-bottom: 15px; /* More space below message */
+            padding: 6px 10px; /* Reduced padding */
             background-color: #3b3b55; /* Darker background for message */
             border: 1px solid #555577; /* Slightly distinct border */
             border-radius: 8px; /* Slightly less rounded corners */
             color: #c0c0d8; /* Lighter text for message */
             font-weight: 500; /* Medium font weight */
-            font-size: 0.85em; /* Consistent font size */
+            font-size: 0.8em; /* Consistent font size */
             box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Subtle shadow */
         }
         
@@ -46,7 +46,7 @@
         .container {
             display: flex;
             flex-direction: column; /* Stack vertically by default */
-            gap: 15px; /* Reduced gap between sections */
+            gap: 12px; /* Reduced gap between sections */
             align-items: center; /* Center items when live video is a thumbnail */
             width: 100%; /* Take full width of parent */
         }
@@ -57,7 +57,7 @@
                 flex-direction: row; /* Two columns on larger screens */
                 justify-content: center; /* Center the two main blocks */
                 align-items: flex-start; /* Align items to the top */
-                gap: 30px; /* Larger gap on desktop */
+                gap: 25px; /* Larger gap on desktop */
             }
         }
         
@@ -75,7 +75,7 @@
         }
 
         .video-container { /* Live preview thumbnail specific */
-            max-width: 200px; /* Smaller thumbnail */
+            max-width: 180px; /* Even smaller thumbnail */
             margin: 0 auto; /* Center the container on mobile */
             aspect-ratio: 16 / 9; /* Ensure live preview maintains aspect ratio */
             flex-shrink: 0;
@@ -85,7 +85,7 @@
         video#liveVideo {
             width: 100%;
             height: 100%; /* Fill container */
-            max-width: 180px; /* Responsive max-width */
+            max-width: 160px; /* Responsive max-width */
             object-fit: cover; /* Cover the container, may crop */
             display: block;
             background-color: #000;
@@ -94,7 +94,7 @@
 
         .replay-video-area { /* Replay video area specific */
             width: 100%; /* Take full width of its parent (.replay-section) initially */
-            max-width: 500px; /* Reduced max width for the replay video */
+            max-width: 450px; /* Reduced max width for the replay video */
             margin: 0 auto; /* Center the video area itself */
             aspect-ratio: 16 / 9; /* Ensure replay area is widescreen */
             touch-action: none; /* Prevent default browser gestures */
@@ -119,13 +119,13 @@
         /* Live Indicator and Timer */
         .live-indicator {
             position: absolute;
-            top: 10px; /* Adjusted position */
-            left: 10px; /* Adjusted position */
+            top: 8px; /* Adjusted position */
+            left: 8px; /* Adjusted position */
             background-color: #e74c3c; /* Red for LIVE */
             color: white;
-            padding: 4px 8px;
-            border-radius: 5px; /* Slightly more rounded */
-            font-size: 0.7em; /* Smaller font */
+            padding: 3px 6px;
+            border-radius: 4px; /* Slightly more rounded */
+            font-size: 0.65em; /* Smaller font */
             font-weight: bold;
             display: none;
             z-index: 10;
@@ -138,13 +138,13 @@
         
         .timer {
             position: absolute;
-            bottom: 10px; /* Adjusted position */
-            right: 10px; /* Adjusted position */
+            bottom: 8px; /* Adjusted position */
+            right: 8px; /* Adjusted position */
             background-color: rgba(0, 0, 0, 0.75); /* Slightly darker overlay */
             color: white;
-            padding: 4px 8px;
-            border-radius: 5px; /* Slightly more rounded */
-            font-size: 0.8em; /* Smaller font */
+            padding: 3px 6px;
+            border-radius: 4px; /* Slightly more rounded */
+            font-size: 0.75em; /* Smaller font */
             z-index: 10;
             font-variant-numeric: tabular-nums; /* Align numbers in timer */
         }
@@ -153,9 +153,9 @@
         .controls-and-instructions {
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Reduced space between sections */
+            gap: 10px; /* Reduced space between sections */
             width: 100%; /* Ensure it takes full width on mobile */
-            max-width: 500px; /* Limit width on larger screens */
+            max-width: 450px; /* Limit width on larger screens */
         }
         
         /* Buttons */
@@ -163,35 +163,35 @@
             display: flex;
             flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
             justify-content: center;
-            gap: 10px; /* Reduced gap between buttons */
-            margin-top: 10px;
+            gap: 8px; /* Reduced gap between buttons */
+            margin-top: 8px;
         }
         
         button {
-            padding: 10px 20px; /* Smaller padding for buttons */
+            padding: 8px 18px; /* Smaller padding for buttons */
             background: linear-gradient(145deg, #5a67d8, #4a54c8); /* Gradient button */
             color: white;
             border: none;
-            border-radius: 6px; /* More rounded buttons */
+            border-radius: 5px; /* More rounded buttons */
             cursor: pointer;
             font-weight: 600;
-            font-size: 0.9em; /* Smaller readable font size */
+            font-size: 0.85em; /* Smaller readable font size */
             transition: all 0.3s ease; /* Smooth transitions */
             flex-grow: 1; /* Allow button to grow in flex container */
-            max-width: 180px; /* Limit button width */
-            box-shadow: 0 3px 8px rgba(0,0,0,0.25); /* Subtle shadow */
+            max-width: 160px; /* Limit button width */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); /* Subtle shadow */
             letter-spacing: 0.02em;
         }
         
         button:hover {
             background: linear-gradient(145deg, #6b7ee8, #5a67d8); /* Lighter gradient on hover */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); /* More pronounced shadow on hover */
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25); /* More pronounced shadow on hover */
             transform: translateY(-1px); /* Slight lift effect */
         }
         
         button:active {
             transform: translateY(0); /* Press down effect */
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         button:disabled {
@@ -212,26 +212,26 @@
         
         /* Section Titles and Status */
         .section-title {
-            font-size: 1.0em; /* Slightly smaller title */
+            font-size: 0.95em; /* Slightly smaller title */
             font-weight: 600;
-            margin-bottom: 10px; /* More space below title */
+            margin-bottom: 8px; /* More space below title */
             color: #ffffff; /* White title */
             text-align: center; /* Center align section titles */
         }
 
         .status {
             text-align: center;
-            margin: 10px 0; /* More vertical space */
+            margin: 5px 0; /* Significantly reduced vertical space */
             font-style: italic;
             color: #aaaaaa; /* Lighter grey for status text */
-            min-height: 20px;
-            font-size: 0.9em;
+            min-height: 20px; /* Keep a minimum height for consistent layout */
+            font-size: 0.85em;
         }
         
         /* Replay Section */
         .replay-section {
-            margin-top: 25px; /* More margin above replay section */
-            padding-top: 20px; /* More padding at top */
+            margin-top: 20px; /* Reduced margin above replay section */
+            padding-top: 15px; /* Reduced padding at top */
             border-top: 1px solid #444455; /* Darker, slightly blueish border */
             display: flex;
             flex-direction: column;
