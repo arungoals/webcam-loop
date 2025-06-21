@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>60-Second Looping Webcam Recorder</title>
+    <title>60-Second video loop for instant replays</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -18,7 +18,7 @@
             text-align: center;
             color: #2c3e50;
             margin-bottom: 20px; /* Adjusted margin */
-            font-size: 1.8em; /* Responsive font size */
+            font-size: 1.2em; /* Responsive font size */
         }
 
         .orientation-message { /* Renamed class for clarity */
@@ -241,10 +241,10 @@
     </style>
 </head>
 <body>
-    <h1>60-Second Looping Webcam Recorder</h1>
+    <h1>Instant replay app!</h1>
 
     <div class="orientation-message">
-        Use the app in landscape orientation on mobile devices
+        Turn your device to landscape orientation. The instant replay loop starts after 1 min from pressing 'start recording'
     </div>
     
     <div class="container">
@@ -265,7 +265,7 @@
     </div>
     
     <div class="replay-section">
-        <div class="section-title">Recent 60-second replay</div>
+        <div class="section-title">60 seconds instant replay loop</div>
         <div class="replay-video-area"> <!-- Wrapper for replay video -->
             <video id="replayVideo" controls loop playsinline></video>
         </div>
