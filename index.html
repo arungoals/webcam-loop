@@ -5,92 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>60-Second Video Loop for Instant Replays</title>
     <style>
+        /* General Body and Typography */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 90%;
+            font-family: 'Inter', sans-serif; /* Using Inter for a modern look */
+            max-width: 95%; /* Slightly wider for better mobile space usage */
             margin: 0 auto;
-            padding: 10px;
-            background-color: #2c2c2c; /* Dark background */
+            padding: 15px; /* Increased padding for better spacing */
+            background: linear-gradient(135deg, #1a1a2e 0%, #2c2c4a 100%); /* Subtle dark gradient */
             color: #e0e0e0; /* Light text color */
+            min-height: 100vh; /* Ensure body takes full height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         h1 {
             text-align: center;
             color: #ffffff; /* White heading */
-            margin-bottom: 20px;
-            font-size: 1.2em;
+            margin-bottom: 25px; /* Adjusted margin */
+            font-size: 1.8em; /* Larger, responsive font size */
+            font-weight: 700; /* Bolder heading */
+            letter-spacing: 0.05em; /* A bit of letter spacing */
         }
 
+        /* Orientation Message */
         .orientation-message {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 5px;
-            background-color: #4a4a4a; /* Darker background for message */
-            border: 1px solid #555555;
-            border-radius: 8px;
-            color: #d4d4d4; /* Lighter text for message */
-            font-weight: bold;
-            font-size: 0.85em;
+            margin-bottom: 30px; /* More space below message */
+            padding: 10px 15px; /* Increased padding */
+            background-color: #3b3b55; /* Darker background for message */
+            border: 1px solid #555577; /* Slightly distinct border */
+            border-radius: 10px; /* More rounded corners */
+            color: #c0c0d8; /* Lighter text for message */
+            font-weight: 500; /* Medium font weight */
+            font-size: 0.9em; /* Consistent font size */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Subtle shadow */
         }
         
+        /* Main Content Container */
         .container {
             display: flex;
-            flex-direction: column;
-            gap: 20px;
-            align-items: center;
+            flex-direction: column; /* Stack vertically by default */
+            gap: 30px; /* Increased gap between sections */
+            align-items: center; /* Center items when live video is a thumbnail */
+            width: 100%; /* Take full width of parent */
         }
 
+        /* Media query for larger screens (e.g., tablets and desktops) */
         @media (min-width: 768px) {
             .container {
-                flex-direction: row;
-                justify-content: center;
-                align-items: flex-start;
-            }
-            .video-container {
-                margin: 0;
+                flex-direction: row; /* Two columns on larger screens */
+                justify-content: center; /* Center the two main blocks */
+                align-items: flex-start; /* Align items to the top */
+                gap: 50px; /* Larger gap on desktop */
             }
         }
         
-        .video-container {
+        /* Video Containers (Live and Replay) */
+        .video-container, .replay-video-area {
             position: relative;
-            background-color: #1a1a1a; /* Even darker for video container */
-            border-radius: 8px;
+            background-color: #2a2a40; /* Darker background for video container */
+            border-radius: 12px; /* More rounded corners */
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
-            max-width: 220px;
-            margin: 0 auto;
-            flex-grow: 0;
-            flex-shrink: 0;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5); /* Prominent shadow */
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px;
-        }
-        
-        video#liveVideo {
-            width: 100%;
-            max-width: 200px;
-            height: auto;
-            display: block;
-            background-color: #000;
-            transform: scale(1);
-            transition: none;
-            transform-origin: center center;
-            margin: 0 auto;
+            padding: 10px; /* Internal padding for spacing */
         }
 
-        .replay-video-area {
-            position: relative;
+        .video-container { /* Live preview thumbnail specific */
+            max-width: 240px; /* Slightly larger thumbnail */
+            margin: 0 auto; /* Center the container on mobile */
+            aspect-ratio: 16 / 9; /* Ensure live preview maintains aspect ratio */
+            flex-shrink: 0;
+            flex-grow: 0;
+        }
+
+        video#liveVideo {
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
-            background-color: #1a1a1a; /* Even darker for replay video container */
+            height: 100%; /* Fill container */
+            max-width: 220px; /* Responsive max-width */
+            object-fit: cover; /* Cover the container, may crop */
             display: block;
-            touch-action: none;
-            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border-radius: 8px; /* Rounded corners for video element itself */
+        }
+
+        .replay-video-area { /* Replay video area specific */
+            width: 100%; /* Take full width of its parent (.replay-section) initially */
+            max-width: 700px; /* Larger max width for the replay video */
+            margin: 0 auto; /* Center the video area itself */
+            aspect-ratio: 16 / 9; /* Ensure replay area is widescreen */
+            touch-action: none; /* Prevent default browser gestures */
         }
 
         video#replayVideo {
@@ -98,28 +105,31 @@
             height: 100%;
             display: block;
             background-color: #000;
-            transform: translate(0px, 0px) scale(1);
-            transition: none;
-            transform-origin: 0% 0%;
-            object-fit: cover;
+            transform: translate(0px, 0px) scale(1); /* Initial transform for pan/zoom */
+            transition: none; /* Transition handled by JS */
+            transform-origin: 0% 0%; /* Origin for pan/zoom is top-left of the video content */
+            object-fit: cover; /* Ensures video covers area, may crop */
+            border-radius: 8px; /* Rounded corners for video element itself */
         }
 
         video#replayVideo.portrait-orientation {
-            object-fit: cover;
+            object-fit: contain; /* Changed to contain for rotated portrait video to see full frame */
         }
         
+        /* Live Indicator and Timer */
         .live-indicator {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: #e74c3c; /* Keep as is for 'LIVE' indicator */
+            top: 15px; /* Adjusted position */
+            left: 15px; /* Adjusted position */
+            background-color: #e74c3c; /* Red for LIVE */
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 6px; /* Slightly more rounded */
+            font-size: 0.8em;
             font-weight: bold;
             display: none;
             z-index: 10;
+            text-transform: uppercase;
         }
         
         .recording .live-indicator {
@@ -128,111 +138,121 @@
         
         .timer {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
+            bottom: 15px; /* Adjusted position */
+            right: 15px; /* Adjusted position */
+            background-color: rgba(0, 0, 0, 0.75); /* Slightly darker overlay */
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 6px; /* Slightly more rounded */
+            font-size: 0.9em;
             z-index: 10;
+            font-variant-numeric: tabular-nums; /* Align numbers in timer */
         }
         
+        /* Controls and Instructions Section */
         .controls-and-instructions {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px; /* Space between sections */
+            width: 100%; /* Ensure it takes full width on mobile */
+            max-width: 600px; /* Limit width on larger screens */
         }
 
-        @media (min-width: 768px) {
-            .container {
-                flex-direction: row;
-                justify-content: center;
-                align-items: flex-start;
-            }
-            .video-container {
-                margin: 0;
-            }
+        /* Order adjustment for mobile and desktop */
+        .video-container {
+            order: 1; /* Video first on mobile */
+        }
+        .controls-and-instructions {
+            order: 2; /* Controls and instructions second on mobile */
         }
         
+        /* Buttons */
         .controls {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
             justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 15px; /* Increased gap between buttons */
+            margin-top: 15px;
         }
         
         button {
-            padding: 10px 20px;
-            background-color: #555555; /* Darker grey button */
+            padding: 12px 25px; /* Larger padding for better touch target */
+            background: linear-gradient(145deg, #5a67d8, #4a54c8); /* Gradient button */
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px; /* More rounded buttons */
             cursor: pointer;
             font-weight: 600;
-            transition: background-color 0.2s;
-            flex-grow: 1;
-            max-width: 200px;
+            font-size: 1em; /* Readable font size */
+            transition: all 0.3s ease; /* Smooth transitions */
+            flex-grow: 1; /* Allow button to grow in flex container */
+            max-width: 220px; /* Limit button width */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); /* Subtle shadow */
+            letter-spacing: 0.02em;
         }
         
         button:hover {
-            background-color: #666666; /* Slightly lighter on hover */
+            background: linear-gradient(145deg, #6b7ee8, #5a67d8); /* Lighter gradient on hover */
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4); /* More pronounced shadow on hover */
+            transform: translateY(-2px); /* Slight lift effect */
         }
         
+        button:active {
+            transform: translateY(0); /* Press down effect */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
         button:disabled {
-            background-color: #3a3a3a; /* Even darker for disabled */
+            background: #3a3a3a; /* Even darker for disabled */
             cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            transform: none;
         }
         
         button.recording {
-            background-color: #e74c3c; /* Keep red for recording */
+            background: linear-gradient(145deg, #e74c3c, #c0392b); /* Red gradient for recording */
         }
         
         button.recording:hover {
-            background-color: #c0392b; /* Darker red on hover */
+            background: linear-gradient(145deg, #c0392b, #a52a22); /* Darker red on hover */
         }
         
+        /* Section Titles and Status */
         .section-title {
-            font-size: 16px;
+            font-size: 1.1em; /* Slightly larger title */
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 12px; /* More space below title */
             color: #ffffff; /* White title */
+            text-align: center; /* Center align section titles */
         }
 
-        ul {
-            list-style-type: disc;
-            padding-left: 20px;
-            margin: 0;
-        }
-
-        li {
-            margin-bottom: 5px;
-        }
-        
-        .replay-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #444444; /* Darker border */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
         .status {
             text-align: center;
-            margin: 10px 0;
+            margin: 15px 0; /* More vertical space */
             font-style: italic;
             color: #aaaaaa; /* Lighter grey for status text */
             min-height: 20px;
+            font-size: 0.95em;
+        }
+        
+        /* Replay Section */
+        .replay-section {
+            margin-top: 40px; /* More margin above replay section */
+            padding-top: 30px; /* More padding at top */
+            border-top: 1px solid #444455; /* Darker, slightly blueish border */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%; /* Take full width */
         }
     </style>
 </head>
 <body>
-    <h1>Instant replay app!</h1>
+    <h1>Instant Replay App</h1>
 
     <div class="orientation-message">
-        Turn your device to landscape orientation for optimal viewing. The instant replay loop starts after 1 minute of recording.
+        For optimal viewing, turn your device to landscape orientation. The instant replay loop will begin 1 minute after you start recording.
     </div>
     
     <div class="container">
@@ -253,7 +273,7 @@
     </div>
     
     <div class="replay-section">
-        <div class="section-title">60 seconds instant replay loop</div>
+        <div class="section-title">60-Second Instant Replay Loop</div>
         <div class="replay-video-area"> <!-- Wrapper for replay video -->
             <video id="replayVideo" controls loop playsinline></video>
         </div>
@@ -649,13 +669,30 @@
         // Clamps the pan values to keep the zoomed content within the replay area
         function clampReplayPan() {
             const containerRect = replayVideoArea.getBoundingClientRect();
-            let effectiveVideoWidth = containerRect.width * currentReplayZoom;
-            let effectiveVideoHeight = containerRect.height * currentReplayZoom;
-
+            
             if (currentReplayZoom > 1.0) {
                 const videoRect = replayVideo.getBoundingClientRect();
-                const clampMaxX = (videoRect.width * currentReplayZoom - containerRect.width) / 2;
-                const clampMaxY = (videoRect.height * currentReplayZoom - containerRect.height) / 2;
+                // Calculate max allowable pan based on the *current rendered size* of the video
+                // relative to the container.
+                // These calculations are based on the assumption that panX/panY are in the
+                // coordinate system of the *unrotated* video content.
+                // If the video is in portrait-orientation class, the video content is rotated.
+                // `object-fit: contain` will ensure the entire portrait video is visible within the landscape container.
+                // When zoomed, the content will expand beyond the container.
+
+                let effectiveVideoWidth = videoRect.width * currentReplayZoom;
+                let effectiveVideoHeight = videoRect.height * currentReplayZoom;
+
+                // For a rotated (portrait) video using `object-fit: contain`, its `videoWidth` and `videoHeight`
+                // in terms of `getBoundingClientRect` might reflect the rotated dimensions, but for pan
+                // logic, it's about the content's original X/Y axis.
+                // However, since `object-fit: cover` and then `object-fit: contain` are used,
+                // the `getBoundingClientRect()` values of `replayVideo` after it's loaded will
+                // already reflect its dimensions within the `replay-video-area` before any JS scaling.
+                // So, the `videoRect.width` and `videoRect.height` should be used as the base.
+
+                const clampMaxX = Math.max(0, (effectiveVideoWidth - containerRect.width) / 2);
+                const clampMaxY = Math.max(0, (effectiveVideoHeight - containerRect.height) / 2);
 
                 replayPanX = Math.max(Math.min(replayPanX, clampMaxX), -clampMaxX);
                 replayPanY = Math.max(Math.min(replayPanY, clampMaxY), -clampMaxY);
