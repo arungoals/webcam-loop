@@ -2,130 +2,124 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>60-Second video loop for instant replays</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>60-Second Video Loop for Instant Replays</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 90%; /* Increased max-width for better mobile use */
+            max-width: 90%;
             margin: 0 auto;
-            padding: 10px; /* Reduced padding for mobile */
-            background-color: #f5f7fa;
-            color: #333;
+            padding: 10px;
+            background-color: #2c2c2c; /* Dark background */
+            color: #e0e0e0; /* Light text color */
         }
         
         h1 {
             text-align: center;
-            color: #2c3e50;
-            margin-bottom: 20px; /* Adjusted margin */
-            font-size: 1.2em; /* Responsive font size */
+            color: #ffffff; /* White heading */
+            margin-bottom: 20px;
+            font-size: 1.2em;
         }
 
-        .orientation-message { /* Renamed class for clarity */
+        .orientation-message {
             text-align: center;
             margin-bottom: 20px;
-            padding: 5px; /* Reduced padding */
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
+            padding: 5px;
+            background-color: #4a4a4a; /* Darker background for message */
+            border: 1px solid #555555;
             border-radius: 8px;
-            color: #856404;
+            color: #d4d4d4; /* Lighter text for message */
             font-weight: bold;
-            font-size: 0.85em; /* Smaller font size */
+            font-size: 0.85em;
         }
         
         .container {
-            display: flex; /* Use flexbox for better mobile stacking */
-            flex-direction: column; /* Stack vertically by default */
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            align-items: center; /* Center items when live video is a thumbnail */
+            align-items: center;
         }
 
-        /* Media query for larger screens (e.g., tablets and desktops) */
         @media (min-width: 768px) {
             .container {
-                flex-direction: row; /* Two columns on larger screens */
-                justify-content: center; /* Center the two main blocks */
-                align-items: flex-start; /* Align items to the top */
+                flex-direction: row;
+                justify-content: center;
+                align-items: flex-start;
             }
             .video-container {
-                margin: 0; /* Reset margin for grid alignment on desktop */
+                margin: 0;
             }
         }
         
         .video-container {
             position: relative;
-            background-color: #000;
+            background-color: #1a1a1a; /* Even darker for video container */
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            /* Constraints for thumbnail container */
-            max-width: 220px; /* Slightly larger than video to accommodate padding/border */
-            margin: 0 auto; /* Center the container on mobile */
-            flex-grow: 0; /* No longer grows, fits content */
-            flex-shrink: 0; /* No longer shrinks */
-            display: flex; /* Use flexbox to center video inside */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
+            max-width: 220px;
+            margin: 0 auto;
+            flex-grow: 0;
+            flex-shrink: 0;
+            display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px; /* Some internal padding */
+            padding: 10px;
         }
         
-        video#liveVideo { /* Specific selector for live video for zoom */
-            width: 100%; /* Still 100% of its parent */
-            max-width: 200px; /* make it a thumbnail */
-            height: auto; /* Maintain aspect ratio */
+        video#liveVideo {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
             display: block;
             background-color: #000;
-            transform: scale(1); /* No zoom, but keep for consistency if needed */
-            transition: none; /* No transition for zoom */
+            transform: scale(1);
+            transition: none;
             transform-origin: center center;
-            margin: 0 auto; /* Center the thumbnail */
+            margin: 0 auto;
         }
 
-        /* Style for the replay video wrapper */
         .replay-video-area {
-            position: relative; /* Crucial for absolute positioning of its children */
-            width: 100%; /* Take full width of its parent (.replay-section) initially */
-            max-width: 600px; /* Suitable max width for the larger replay video */
-            margin: 0 auto; /* Center the video area itself */
-            border-radius: 8px; /* Consistent rounded corners */
-            overflow: hidden; /* To clip any overflow from zoom or rotation */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Consistent shadow */
-            background-color: #000; /* Ensure background if video not loaded */
-            display: block; /* Ensure it behaves like a block element for centering */
-            /* Add touch-action to prevent default browser gestures */
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
+            background-color: #1a1a1a; /* Even darker for replay video container */
+            display: block;
             touch-action: none;
-            aspect-ratio: 16 / 9; /* Ensure replay area is widescreen */
+            aspect-ratio: 16 / 9;
         }
 
         video#replayVideo {
-            width: 100%; /* Now 100% of .replay-video-area */
-            height: 100%; /* Fill the height of the container */
+            width: 100%;
+            height: 100%;
             display: block;
             background-color: #000;
-            transform: translate(0px, 0px) scale(1); /* Initial transform for pan/zoom */
-            transition: none; /* Transition handled by JS */
-            transform-origin: 0% 0%; /* Origin for pan/zoom is top-left of the video content */
-            object-fit: cover; /* Ensures video covers area, may crop */
+            transform: translate(0px, 0px) scale(1);
+            transition: none;
+            transform-origin: 0% 0%;
+            object-fit: cover;
         }
 
-        /* Styles for portrait orientation of the replay video if it needs to be rotated */
         video#replayVideo.portrait-orientation {
-            /* JS will handle transform for pan/zoom/rotate */
-            object-fit: cover; /* Changed to cover to fill the wide area, cropping if needed */
+            object-fit: cover;
         }
         
         .live-indicator {
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: #e74c3c;
+            background-color: #e74c3c; /* Keep as is for 'LIVE' indicator */
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
             display: none;
-            z-index: 10; /* Ensure indicator is above video */
+            z-index: 10;
         }
         
         .recording .live-indicator {
@@ -141,36 +135,29 @@
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 14px;
-            z-index: 10; /* Ensure timer is above video */
+            z-index: 10;
         }
         
         .controls-and-instructions {
             display: flex;
-            flex-direction: column; /* Stack controls and instructions */
-            gap: 20px; /* Space between sections */
+            flex-direction: column;
+            gap: 20px;
         }
 
-        /* Order adjustment for mobile and desktop */
-        .video-container {
-            order: 1; /* Video first on mobile */
-        }
-        .controls-and-instructions {
-            order: 2; /* Controls and instructions second on mobile */
-        }
         @media (min-width: 768px) {
             .container {
-                flex-direction: row; /* Two columns on larger screens */
-                justify-content: center; /* Center the two main blocks */
-                align-items: flex-start; /* Align items to the top */
+                flex-direction: row;
+                justify-content: center;
+                align-items: flex-start;
             }
             .video-container {
-                margin: 0; /* Reset margin for grid alignment on desktop */
+                margin: 0;
             }
         }
         
         .controls {
             display: flex;
-            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            flex-wrap: wrap;
             justify-content: center;
             gap: 10px;
             margin-top: 10px;
@@ -178,39 +165,39 @@
         
         button {
             padding: 10px 20px;
-            background-color: #3498db;
+            background-color: #555555; /* Darker grey button */
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 600;
             transition: background-color 0.2s;
-            flex-grow: 1; /* Allow button to grow in flex container */
-            max-width: 200px; /* Limit button width */
+            flex-grow: 1;
+            max-width: 200px;
         }
         
         button:hover {
-            background-color: #2980b9;
+            background-color: #666666; /* Slightly lighter on hover */
         }
         
         button:disabled {
-            background-color: #bdc3c7;
+            background-color: #3a3a3a; /* Even darker for disabled */
             cursor: not-allowed;
         }
         
         button.recording {
-            background-color: #e74c3c;
+            background-color: #e74c3c; /* Keep red for recording */
         }
         
         button.recording:hover {
-            background-color: #c0392b;
+            background-color: #c0392b; /* Darker red on hover */
         }
         
         .section-title {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #2c3e50;
+            color: #ffffff; /* White title */
         }
 
         ul {
@@ -226,8 +213,7 @@
         .replay-section {
             margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #ecf0f1;
-            /* Use flexbox to center the video area and title */
+            border-top: 1px solid #444444; /* Darker border */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -237,7 +223,7 @@
             text-align: center;
             margin: 10px 0;
             font-style: italic;
-            color: #7f8c8d;
+            color: #aaaaaa; /* Lighter grey for status text */
             min-height: 20px;
         }
     </style>
@@ -246,7 +232,7 @@
     <h1>Instant replay app!</h1>
 
     <div class="orientation-message">
-        Turn your device to landscape orientation. The instant replay loop starts after 1 min from pressing 'start recording'
+        Turn your device to landscape orientation for optimal viewing. The instant replay loop starts after 1 minute of recording.
     </div>
     
     <div class="container">
@@ -282,7 +268,7 @@
         const livePreview = document.getElementById('livePreview');
         const statusDisplay = document.getElementById('status');
         const cameraFlipButton = document.getElementById('cameraFlipButton');
-        const replayVideoArea = document.querySelector('.replay-video-area'); // New: Get the wrapper for replay video
+        const replayVideoArea = document.querySelector('.replay-video-area'); // Wrapper for replay video
         
         // Global variables
         let mediaRecorder;
@@ -311,6 +297,8 @@
         let lastTouchX = 0;
         let lastTouchY = 0;
         let isPinching = false;
+        let initialMidpointXInVideo = 0; // For pinch-to-zoom calculation
+        let initialMidpointYInVideo = 0; // For pinch-to-zoom calculation
 
 
         // Initialize the application: Request access to media devices
@@ -384,7 +372,7 @@
             }
         }
         
-        // Function to start a 15-second recording segment
+        // Function to start a 60-second recording segment
         function startRecording() {
             if (!mediaStream) {
                 statusDisplay.textContent = "Error: Camera/Microphone not available.";
@@ -398,6 +386,7 @@
             clearInterval(timerInterval);
 
             // Determine and store the orientation of the live stream at the start of recording
+            // This relies on videoWidth/Height after metadata is loaded.
             liveVideo.onloadedmetadata = () => {
                 if (liveVideo.videoHeight > liveVideo.videoWidth) {
                     lastRecordedOrientation = 'portrait';
@@ -405,9 +394,10 @@
                     lastRecordedOrientation = 'landscape';
                 }
                 console.log('Live video orientation detected:', lastRecordedOrientation);
-                liveVideo.onloadedmetadata = null; 
+                liveVideo.onloadedmetadata = null; // Remove listener to prevent re-triggering
             };
-            if (liveVideo.readyState >= 1) { // If metadata already loaded
+            // If metadata is already loaded before the event fires (e.g., stream already active)
+            if (liveVideo.readyState >= 1) { 
                 if (liveVideo.videoHeight > liveVideo.videoWidth) {
                     lastRecordedOrientation = 'portrait';
                 } else {
@@ -553,6 +543,7 @@
 
         // --- Replay Video Pinch Zoom and Pan Functions ---
 
+        // Helper to get distance between two touches
         function getDistance(touch1, touch2) {
             const dx = touch1.clientX - touch2.clientX;
             const dy = touch1.clientY - touch2.clientY;
@@ -573,6 +564,9 @@
                 
                 // Store midpoint relative to the video's current content, considering current pan and zoom
                 // This is the point on the video content that should stay under the fingers.
+                // If the video is rotated, the effective coordinates for calculation might be swapped/inverted.
+                // For simplicity, we calculate based on the current display, and rely on updateReplayTransform
+                // and clampReplayPan to apply corrections.
                 initialMidpointXInVideo = (midpointX - rect.left - replayPanX) / currentReplayZoom;
                 initialMidpointYInVideo = (midpointY - rect.top - replayPanY) / currentReplayZoom;
                 
@@ -601,6 +595,9 @@
                 const currentMidpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
 
                 // Adjust pan to keep the 'initialMidpointInVideo' under the current midpoint
+                // This assumes pan is applied before rotation in the transform.
+                // If the video is rotated, screen x/y movement maps differently to video content x/y
+                // This pan adjustment might need to be more complex if rotation is applied.
                 replayPanX = currentMidpointX - initialMidpointXInVideo * newZoom;
                 replayPanY = currentMidpointY - initialMidpointYInVideo * newZoom;
 
@@ -613,8 +610,17 @@
                 const dx = touch.clientX - lastTouchX;
                 const dy = touch.clientY - lastTouchY;
 
-                replayPanX += dx;
-                replayPanY += dy;
+                // Adjust pan based on whether the video is rotated
+                if (replayVideo.classList.contains('portrait-orientation')) {
+                    // If video is rotated 90 degrees clockwise (e.g., portrait video displayed in landscape container)
+                    // Screen X movement (dx) corresponds to negative Y pan in original video coordinates
+                    // Screen Y movement (dy) corresponds to X pan in original video coordinates
+                    replayPanX += dy;
+                    replayPanY -= dx;
+                } else {
+                    replayPanX += dx;
+                    replayPanY += dy;
+                }
                 updateReplayTransform();
 
                 lastTouchX = touch.clientX;
@@ -631,12 +637,8 @@
         function updateReplayTransform() {
             let transformString = `translate(${replayPanX}px, ${replayPanY}px) scale(${currentReplayZoom})`;
             if (replayVideo.classList.contains('portrait-orientation')) {
-                transformString += ' rotate(90deg)';
-                // When rotated, the canvas dimensions swap, so adjust pan for transformed state
-                // This becomes more complex with translation and rotation combined.
-                // For simplicity, we'll keep the pan relative to the unrotated coordinates
-                // and let the rotation transform the entire system.
-                // If pan looks off, more complex matrix transforms might be needed.
+                // Apply rotation after translation and scaling to keep pan in original coordinates
+                transformString += ' rotate(90deg)'; 
             }
             replayVideo.style.transform = transformString;
 
@@ -644,22 +646,22 @@
             clampReplayPan();
         }
 
+        // Clamps the pan values to keep the zoomed content within the replay area
         function clampReplayPan() {
-            const videoRect = replayVideo.getBoundingClientRect();
-            const containerRect = replayVideoArea.getBoundingClientRect(); // Using the wrapper for bounding
-            
-            // Only clamp if zoomed in
+            const containerRect = replayVideoArea.getBoundingClientRect();
+            let effectiveVideoWidth = containerRect.width * currentReplayZoom;
+            let effectiveVideoHeight = containerRect.height * currentReplayZoom;
+
             if (currentReplayZoom > 1.0) {
-                const maxPanX = (videoRect.width * currentReplayZoom - containerRect.width) / 2;
-                const maxPanY = (videoRect.height * currentReplayZoom - containerRect.height) / 2;
+                const videoRect = replayVideo.getBoundingClientRect();
+                const clampMaxX = (videoRect.width * currentReplayZoom - containerRect.width) / 2;
+                const clampMaxY = (videoRect.height * currentReplayZoom - containerRect.height) / 2;
 
-                replayPanX = Math.max(Math.min(replayPanX, maxPanX), -maxPanX);
-                replayPanY = Math.max(Math.min(replayPanY, maxPanY), -maxPanY);
+                replayPanX = Math.max(Math.min(replayPanX, clampMaxX), -clampMaxX);
+                replayPanY = Math.max(Math.min(replayPanY, clampMaxY), -clampMaxY);
 
-                // Reapply transform with clamped values
                 replayVideo.style.transform = `translate(${replayPanX}px, ${replayPanY}px) scale(${currentReplayZoom})` + (replayVideo.classList.contains('portrait-orientation') ? ' rotate(90deg)' : '');
             } else {
-                // If not zoomed, reset pan to 0
                 if (replayPanX !== 0 || replayPanY !== 0) {
                     replayPanX = 0;
                     replayPanY = 0;
