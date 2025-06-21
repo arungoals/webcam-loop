@@ -46,7 +46,7 @@
         .container {
             display: flex;
             flex-direction: column; /* Stack vertically by default */
-            gap: 20px; /* Reduced gap between sections */
+            gap: 15px; /* Reduced gap between sections */
             align-items: center; /* Center items when live video is a thumbnail */
             width: 100%; /* Take full width of parent */
         }
@@ -259,7 +259,7 @@
                 <button id="recordButton">Start Recording</button>
                 <button id="cameraFlipButton">Flip Camera</button>
             </div>
-            <div class="status" id="status">Ready to record</div>
+            <div class="status" id="status"></div>
             
         </div>
     </div>
@@ -317,7 +317,7 @@
         async function init() {
             try {
                 await getCameraStream(currentCameraFacing); // Get initial camera stream
-                statusDisplay.textContent = "Camera ready. Click 'Start Recording' to begin.";
+                statusDisplay.textContent = ""; // Removed "Ready." message
 
                 // Determine the best supported MIME type for MediaRecorder
                 // Prioritize MP4 for wider mobile compatibility
@@ -373,7 +373,7 @@
                 });
                 liveVideo.srcObject = mediaStream; // Assign stream to live video element
                 console.log(`Camera switched to: ${facingMode}`);
-                statusDisplay.textContent = `Camera ready (${facingMode === 'user' ? 'Front' : 'Back'}). Click 'Start Recording'.`;
+                statusDisplay.textContent = ``; // Removed "Camera Ready" message
                 recordButton.disabled = false; // Re-enable record button if camera access succeeds
                 cameraFlipButton.disabled = false; // Re-enable camera flip
             } catch (error) {
@@ -486,7 +486,7 @@
             livePreview.classList.remove('recording');
             recordButton.textContent = 'Start Recording'; // Correctly set to Start Recording
             recordButton.classList.remove('recording');
-            statusDisplay.textContent = "Ready to record.";
+            statusDisplay.textContent = ""; // Removed "Ready." message
             secondsRemaining = RECORDING_DURATION; 
             updateTimerDisplay();
             replayVideo.classList.remove('portrait-orientation'); // Clear orientation class
